@@ -101,10 +101,7 @@ func (gate *Gate) Run() {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("runtime exception catched!")
-
-			err := leoerror.CreateLeoError(leoerror.ErrRuntimeExcept, 
-				"runtime exception failed")
-			gate.Logger.Error(err)
+			gate.Logger.Error(r)
 		}
 
 		gate.save()
