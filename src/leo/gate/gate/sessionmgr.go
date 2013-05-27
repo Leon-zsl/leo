@@ -7,8 +7,11 @@ type SessionMgr struct {
 	sessionMap map[string] *Session
 }
 
-func Create() (mgr *SessionMgr, err error) {
+func NewSessionMgr() (mgr *SessionMgr, err error) {
+	mgr = nil
+	err = nil
 	//todo:
+	return
 }
 
 func (mgr *SessionMgr) Start() {

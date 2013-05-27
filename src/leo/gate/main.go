@@ -5,16 +5,16 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"leo/gate/gate"
 )
 
-var (
-	gate *Gate
-)
-
 func startup() {
-	gate, err = gate.Create()
+	cpu := runtime.NumCPU()
+	runtime.GOMAXPROCS(cpu)
+	fmt.Println("number if cpu: ", cpu)
 
+	gate, err := gate.NewGate()
 	if err != nil {
 		fmt.Println("gate server start up failed")
 	} else {

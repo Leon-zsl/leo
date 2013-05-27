@@ -3,19 +3,18 @@
 
 package gate
 
-import (
-	"net"
-)
+// import (
+// 	"net"
+// )
 
 type Session struct {
 	ip string
 	port int
 
-	uid string
-	
+	uid string	
 }
 
-func Create() (session *Session, err error) {
+func NewSession() (session *Session, err error) {
 	session = nil
 	err = nil
 
