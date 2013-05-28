@@ -1,22 +1,23 @@
 /* this is the error code
 */
-package leoerror
+package base
 
 import (
 	"strconv"
 )
+
 const (
-	ErrNo = iota
-	ErrSys
-	ErrStartFailed
-	ErrRuntimeExcept
+	LeoErrNo = iota
+	LeoErrSys
+	LeoErrStartFailed
+	LeoErrRuntimeExcept
 )
 
 var errMap = map[int] string {
-ErrNo : "no error",
-ErrSys : "sys error",
-ErrStartFailed : "start failed",
-ErrRuntimeExcept : "runtime exception",
+LeoErrNo : "no error",
+LeoErrSys : "sys error",
+LeoErrStartFailed : "start failed",
+LeoErrRuntimeExcept : "runtime exception",
 }
 
 type LeoError struct {
@@ -24,7 +25,7 @@ type LeoError struct {
 	msg string
 }
 
-func CreateLeoError(errcode int, errmsg string) LeoError {
+func NewLeoError(errcode int, errmsg string) LeoError {
 	return LeoError{code:errcode, msg:errmsg}
 }
 

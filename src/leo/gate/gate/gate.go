@@ -10,7 +10,7 @@ import (
 	"ini"
 	"log4go"
 
-	"leo/base/leoerror"
+	"leo/base"
 )
 
 type Gate struct {
@@ -25,7 +25,7 @@ type Gate struct {
 }
 
 var (
-	Root *Gate
+	Root *Gate = nil
 )
 
 func NewGate() (gt *Gate, err error) {
@@ -33,26 +33,36 @@ func NewGate() (gt *Gate, err error) {
 		if r := recover(); r != nil {
 			fmt.Println("create gate failed!")
 			gt = nil
-			err = leoerror.CreateLeoError(leoerror.ErrStartFailed, 
+			err = base.NewLeoError(base.LeoErrStartFailed, 
 				"gate start failed")
 		}
 	}()
 
-	gt = new(Gate)
-	err = gt.Startup()
-	if err != nil {
-		fmt.Println("init gate failed")
-		gt = nil
+	err = nil
+	gt = nil
+
+	if Root != nil {
+		gt = Root
 		return
 	}
 
-	Root = gt
+	Root = new(Gate)
+	err = Root.init()
+	if err != nil {
+		fmt.Println("init gate failed")
+		Root = nil
+		return
+	}
+
+	gt = Root
 	return
 }
 
-func (gate *Gate) Startup() error {
+func (gate *Gate) init() error {
+	//parse config file
 	gate.parseConfig()
 
+	//init logger
 	file, ok := gate.cfgFile.Get("logger", "config_file")
 	if !ok {
 		gate.close()
@@ -69,23 +79,40 @@ func (gate *Gate) Startup() error {
 		return err
 	}
 
-	port, ok := gate.cfgFile.Get("listen_addr", "port")
+	//init acceptor
+	port, ok := gate.cfgFile.Get("acceptor", "port")
 	if !ok {
 		gate.close()
-		return errors.New("can not find listen_addr/port in gate config file")
+		return errors.New("can not find acceptor/port in gate config file")
 	}
 	val, err := strconv.Atoi(port)
 	if err != nil {
 		gate.close()
 		return errors.New("listen port is invalid")
 	}
-	ac, err := NewAcceptor(val)
+	ip, ok := gate.cfgFile.Get("acceptor", "ip")
+	if !ok {
+		gate.close()
+		return errors.New("can not find acceptor/ip in gate config file")
+	}
+	count, ok := gate.cfgFile.Get("acceptor", "count")
+	if !ok {
+		gate.close()
+		return errors.New("can not find acceptor/count in gate config file")
+	}
+	cval, err := strconv.Atoi(count)
+	if err != nil {
+		gate.close()
+		return errors.New("listen count is invalid")
+	}
+	ac, err := NewAcceptor(ip, val, cval)
 	if err != nil {
 		gate.close()
 		return err
 	}
 	gate.Acceptor = ac
 
+	//init session mgr
 	sm, err := NewSessionMgr()
 	if err != nil {
 		gate.close()
@@ -93,24 +120,34 @@ func (gate *Gate) Startup() error {
 	}
 	gate.SessionMgr = sm
 
+	//init connector
+	//todo:
+	
 	gate.running = true
 	return nil
+}
+
+func (gate *Gate) Start() {
+	gate.Logger.Info("gate start now")
+	gate.Acceptor.Start()
+	gate.SessionMgr.Start()
 }
 
 func (gate *Gate) Run() {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("runtime exception catched!")
-			gate.Logger.Error(r)
+			gate.Logger.Critical(r)
 		}
 
 		gate.save()
 		gate.close()
 	}()
 
-	for gate.running {
-		//todo:
-	}
+//	for gate.running {
+		gate.Acceptor.Update()
+		gate.SessionMgr.Update()
+//	}
 }
 
 func (gate *Gate) Shutdown() {
@@ -118,20 +155,23 @@ func (gate *Gate) Shutdown() {
 }
 
 func (gate *Gate) close() {
-	if gate.Logger != nil {
-		gate.Logger.Close()
-		gate.Logger = nil
+	gate.Logger.Info("gate close now")
+
+	if gate.SessionMgr != nil {
+		gate.SessionMgr.Close()
+		gate.SessionMgr = nil
 	}
 	if gate.Acceptor != nil {
 		gate.Acceptor.Close()
 		gate.Acceptor = nil
 	}
-	if gate.SessionMgr != nil {
-		gate.SessionMgr.Close()
-		gate.SessionMgr = nil
+	if gate.Logger != nil {
+		gate.Logger.Close()
+		gate.Logger = nil
 	}
 
 	gate.cfgFile = nil
+	Root = nil
 }
 
 func (gate *Gate) save() {
