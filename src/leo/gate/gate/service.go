@@ -5,7 +5,6 @@ package gate
 
 import (
 	"fmt"
-	//"runtime"
 	"runtime/debug"
 )
 
@@ -27,7 +26,6 @@ func (h *EchoHandler) HandleSessionUpdate(ssn *Session) {
 		if pk == nil {
 			break
 		}
-
 		fmt.Println(pk.Op(), string(pk.Args()))
 		ssn.Send(pk)
 	}
@@ -35,7 +33,6 @@ func (h *EchoHandler) HandleSessionUpdate(ssn *Session) {
 
 func (h *EchoHandler) HandleSessionError(ssn *Session, err error) {
 	fmt.Println("session error:", ssn.Addr(), ",", err.Error())
-
 	debug.PrintStack()
 }
 

@@ -227,10 +227,6 @@ func (ssn *Session) onsend() {
 
 		sendbuf := make([]byte, 0)
 		for {
-			if ssn.closed {
-				break
-			}
-
 			pkt := ssn.sendq.Pop()
 			if pkt == nil {
 				break
@@ -239,7 +235,7 @@ func (ssn *Session) onsend() {
 			buffer, err := pkt.Bytes()
 			if err != nil {
 				ssn.handle_send_err(err)
-				continue
+				break
 			}
 
 			var l int32 = 0
@@ -252,11 +248,15 @@ func (ssn *Session) onsend() {
 			err = binary.Write(buf, binary.BigEndian, l)
 			if err != nil && !ssn.closed {
 				ssn.handle_send_err(err)
-				continue
+				break
 			}
 			buffer = append(buf.Bytes(), buffer...)
 			sendbuf = append(sendbuf, buffer...)
 			//sendbuf = append(sendbuf, buf.Bytes()..., buffer...)
+		}
+
+		if ssn.closed {
+			break
 		}
 
 		ln := 0
