@@ -9,7 +9,7 @@ import (
 	"strings"
 	"net"
 	"sync"
-	"syscall"
+//	"syscall"
 	"runtime/debug"
 )
 
