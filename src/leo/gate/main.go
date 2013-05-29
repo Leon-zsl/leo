@@ -1,6 +1,5 @@
 /* this is the gate server
  */
-
 package main
 
 import (

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"net"
 	"sync"
-	"runtime"
+	"syscall"
 	"runtime/debug"
 )
 
@@ -49,6 +49,8 @@ func (mgr *Acceptor) init(ip string, port int, count int) error {
 }
 
 func (mgr *Acceptor) Start() {
+	mgr.running = true
+
 	addr, err := net.ResolveTCPAddr("tcp", mgr.addr)
 	if err != nil {
 		Root.Logger.Critical("acceptor start failed:", err)
@@ -59,9 +61,30 @@ func (mgr *Acceptor) Start() {
 		Root.Logger.Critical("acceptor start failed:", err)
 		return
 	}
+
+// 	file, err := listener.File()
+// 	if err != nil {
+// 		Root.Logger.Critical("get tcp listener file failed", err)
+// 		return
+// 	}
+// 	err = syscall.SetsockoptInt(int(file.Fd()),
+// 		syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+// 	if err != nil {
+// 		Root.Logger.Critical("set tcp listener reuseaddr failed", err)
+// 		return
+// 	}
+// 	s, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
+// 	if err != nil {
+// 		Root.Logger.Critical("get tcp listener file failed", err)
+// 		return
+// 	}
+// 	err = syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+// 	if err != nil {
+// 		Root.Logger.Critical("set tcp listener reuseaddr failed", err)
+// 		return
+// 	}
 	mgr.listener = listener
 	
-	mgr.running = true
 	for i := 0; i < mgr.listen_count; i++ {
 		go mgr.handle_accept()
 	}
@@ -115,14 +138,15 @@ func (mgr *Acceptor) handle_accept() {
 	}()
 
 	for {
+		if !mgr.running {
+			break
+		}
+
 		conn, err := mgr.listener.AcceptTCP()
 		if err != nil {
-			if !mgr.running {
-				runtime.Goexit()
-			}
-
 			if Root != nil && Root.Logger != nil {
 				Root.Logger.Error(err)
+				debug.PrintStack()
 			} else {
 				fmt.Println("accept tcp error:", err.Error())
 			}
