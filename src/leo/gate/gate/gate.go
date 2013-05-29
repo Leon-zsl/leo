@@ -8,20 +8,20 @@ import (
 	"strconv"
 	"path"
 	"ini"
-	"log4go"
+	"runtime"
+	"runtime/debug"
 
 	"leo/base"
 )
 
 type Gate struct {
 	running bool
-
 	cfgFile ini.File
 
-	Logger log4go.Logger
-
+	Logger *base.Logger
 	SessionMgr *SessionMgr
 	Acceptor *Acceptor
+	Service *GateService
 }
 
 var (
@@ -29,9 +29,13 @@ var (
 )
 
 func NewGate() (gt *Gate, err error) {
+	cpu := runtime.NumCPU()
+	runtime.GOMAXPROCS(cpu)
+	fmt.Println("number if cpu: ", cpu)
+
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("create gate failed!")
+			fmt.Println("create gate failed!", string(debug.Stack()))
 			gt = nil
 			err = base.NewLeoError(base.LeoErrStartFailed, 
 				"gate start failed")
@@ -68,12 +72,12 @@ func (gate *Gate) init() error {
 		gate.close()
 		return errors.New("can not find logger/config_file in gate config file")
 	}
-	name, ok := gate.cfgFile.Get("logger", "log_name")
+	ty, ok := gate.cfgFile.Get("logger", "log_type")
 	if !ok {
 		gate.close()
-		return errors.New("can not find logger/log_name in gate config file")
+		return errors.New("can not find logger/log_type in gate config file")
 	}
-	err := gate.createLogger(name, path.Join(CONF_PATH, file))
+	err := gate.createLogger(ty, path.Join(CONF_PATH, file))
 	if err != nil {
 		gate.close()
 		return err
@@ -120,6 +124,14 @@ func (gate *Gate) init() error {
 	}
 	gate.SessionMgr = sm
 
+	//init service
+	sv, err := NewService()
+	if err != nil {
+		gate.close()
+		return err
+	}
+	gate.Service = sv
+
 	//init connector
 	//todo:
 	
@@ -131,23 +143,32 @@ func (gate *Gate) Start() {
 	gate.Logger.Info("gate start now")
 	gate.Acceptor.Start()
 	gate.SessionMgr.Start()
+	gate.Service.Start()
 }
 
 func (gate *Gate) Run() {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("runtime exception catched!")
-			gate.Logger.Critical(r)
+			if gate.Logger != nil {
+				gate.Logger.Critical(r, string(debug.Stack()))
+			} else {
+				fmt.Println("run time exception:", r, string(debug.Stack()))
+			}
 		}
 
 		gate.save()
 		gate.close()
 	}()
 
-//	for gate.running {
+	for {
+		if !gate.running {
+			break
+		}
+
 		gate.Acceptor.Update()
 		gate.SessionMgr.Update()
-//	}
+		gate.Service.Update()
+	}
 }
 
 func (gate *Gate) Shutdown() {
@@ -157,6 +178,10 @@ func (gate *Gate) Shutdown() {
 func (gate *Gate) close() {
 	gate.Logger.Info("gate close now")
 
+	if gate.Service != nil {
+		gate.Service.Close()
+		gate.Service = nil
+	}
 	if gate.SessionMgr != nil {
 		gate.SessionMgr.Close()
 		gate.SessionMgr = nil
@@ -188,21 +213,19 @@ func (gate *Gate) parseConfig() error {
 	return err
 }
 
-func (gate *Gate) createLogger(logname, confile string) error {
-	log := make(log4go.Logger)
-	log.LoadConfiguration(confile)
-	
-	filter, ok := log[logname]
-	if ok {
-		if IS_DEBUG {
-			filter.Level = log4go.DEBUG
-		} else {
-			filter.Level = log4go.ERROR
-		}
-	} else {
-		return errors.New("can not find log name " + logname)
+func (gate *Gate) createLogger(ty, confile string) error {
+	v := base.LOG_TYPE_SYS
+	switch ty {
+	case "sys":
+		v = base.LOG_TYPE_SYS
+	case "log4go":
+		v = base.LOG_TYPE_LOG4GO
+	default:
+		fmt.Println("invalid log type", ty)
 	}
-
-	gate.Logger = log
-	return nil
+	lg, err := base.NewLogger(v, confile)
+	if err == nil {
+		gate.Logger = lg
+	}
+	return err
 }

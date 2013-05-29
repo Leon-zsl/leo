@@ -10,6 +10,7 @@ import (
 	"net"
 	"sync"
 	"runtime"
+	"runtime/debug"
 )
 
 type ConnectListener interface {
@@ -42,6 +43,9 @@ func (mgr *Acceptor) init(ip string, port int, count int) error {
 		return err
 	}
 	mgr.addr = val
+	if count <= 0 {
+		count = 1
+	}
 	mgr.listen_count = count
 
 	listener, err := net.ListenTCP("tcp", addr)
@@ -101,10 +105,9 @@ func (mgr *Acceptor) handle_accept() {
 	defer func() {
 		if r := recover(); r != nil {
 			if Root != nil && Root.Logger != nil {
-				fmt.Println("accept exception caught!")
-				Root.Logger.Critical(r)
+				Root.Logger.Critical(r, string(debug.Stack()))
 			} else {
-				fmt.Println("handle_accept exception")
+				fmt.Println("handle_accept except", r, string(debug.Stack()))
 			}
 		}
 	}()
@@ -117,7 +120,6 @@ func (mgr *Acceptor) handle_accept() {
 			}
 
 			if Root != nil && Root.Logger != nil {
-				fmt.Println("accept error caught!")
 				Root.Logger.Error(err)
 			} else {
 				fmt.Println("accept tcp error:", err.Error())

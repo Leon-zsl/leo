@@ -12,12 +12,15 @@ import (
 	"strconv"
 	"net"
 	"uuid"
+	"runtime/debug"
 
 	"leo/base"
 )
 
-type ErrorListener interface {
-	Handle(err error)
+type SessionHandler interface {
+	HandleSessionUpdate(ssn *Session)
+	HandleSessionClose(ssn *Session)
+	HandleSessionError(ssn *Session, err error)
 }
 
 type Session struct {
@@ -30,11 +33,9 @@ type Session struct {
 	sendq *base.RingBuffer
 
 	recvbuf []byte
-	tempbuf []byte
 	conn *net.TCPConn
 
-	senderrlistener ErrorListener
-	recverrlistener ErrorListener
+	handler SessionHandler
 }
 
 func NewSession(conn *net.TCPConn) (session *Session, err error) {
@@ -52,7 +53,6 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 	ssn.sendq = base.NewRingBuffer()
 
 	ssn.recvbuf = make([]byte, 0)
-	ssn.tempbuf = make([]byte, 2048)
 	conn.SetReadBuffer(2048)
 	
 	go ssn.onsend()
@@ -66,6 +66,10 @@ func (ssn *Session) Closed() bool {
 }
 
 func (ssn *Session) Close() {
+	if ssn.handler != nil {
+		ssn.handler.HandleSessionClose(ssn)
+	}
+
 	if ssn.conn != nil {
 		ssn.conn.Close()
 		ssn.conn = nil
@@ -74,7 +78,21 @@ func (ssn *Session) Close() {
 }
 
 func (ssn *Session) Update() {
-	//todo:
+	if ssn.handler == nil {
+		for {
+			pk := ssn.Recv()
+			if pk == nil {
+				break
+			}
+		}
+		return
+	}
+
+	ssn.handler.HandleSessionUpdate(ssn)
+}
+
+func (ssn *Session) SetHandler(l SessionHandler) {
+	ssn.handler = l
 }
 
 func (ssn *Session) Recv() *base.Packet {
@@ -88,15 +106,51 @@ func (ssn *Session) Send(pk *base.Packet) {
 	ssn.sendq.Push(pk)
 }
 
+func (ssn *Session) IP() string {
+	return strings.Split(ssn.addr, ":")[0]
+}
+
+func (ssn *Session) Port() int {
+	p, _ := strconv.Atoi(strings.Split(ssn.addr, ":")[1])
+	return p
+}
+
+func (ssn *Session) Addr() string {
+	return ssn.addr
+}
+
+func (ssn *Session) SID() string {
+	return ssn.sid
+}
+
+func (ssn *Session) handle_send_err(err error) {
+	if ssn.handler != nil {
+		ssn.handler.HandleSessionError(ssn, err)
+	} else {
+		Root.Logger.Error("write session failed: " + err.Error())
+	}
+	ssn.Close()
+}
+
+func (ssn *Session) handle_recv_err(err error) {
+	if ssn.handler != nil {
+		ssn.handler.HandleSessionError(ssn, err)
+	} else {
+		Root.Logger.Error("read session failed: " + err.Error())
+	}
+	ssn.Close()
+}
+
 func (ssn *Session) onrecv() {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
+				fmt.Println("handle recv err 0000")
 				ssn.handle_recv_err(err)
 			} else if Root != nil && Root.Logger != nil {
-				Root.Logger.Critical(r)
+				Root.Logger.Critical(r, string(debug.Stack()))
 			} else {
-				fmt.Println("recv exception caught", ssn.addr)
+				fmt.Println("recv exception caught", r, string(debug.Stack()))
 			}
 		}
 	}()
@@ -106,7 +160,8 @@ func (ssn *Session) onrecv() {
 			break
 		}
 
-		l, err := ssn.conn.Read(ssn.tempbuf)
+		tmpbuf := make([]byte, 2048)
+		l, err := ssn.conn.Read(tmpbuf)
 		if err != nil {
 			ssn.handle_recv_err(err)
 			continue
@@ -116,12 +171,13 @@ func (ssn *Session) onrecv() {
 			continue
 		}
 
-		ssn.recvbuf = append(ssn.recvbuf, ssn.tempbuf[:l]...)
+		ssn.recvbuf = append(ssn.recvbuf, tmpbuf[:l]...)
 		for {
 			var ln int32 = 0
 			buf := bytes.NewBuffer(ssn.recvbuf[:4])
 			err := binary.Read(buf, binary.BigEndian, &ln)
 			if err != nil {
+				fmt.Println("handle recv err 2222")
 				ssn.handle_recv_err(err)
 				break
 			}
@@ -132,6 +188,7 @@ func (ssn *Session) onrecv() {
 
 			pk, err := base.NewPacketFromBytes(ssn.recvbuf[4:ln])
 			if err != nil {
+				fmt.Println("handle recv err 3333")
 				ssn.handle_recv_err(err)
 				break
 			}
@@ -148,9 +205,9 @@ func (ssn *Session) onsend() {
 			if err, ok := r.(error); ok {
 				ssn.handle_send_err(err)
 			} else if Root != nil && Root.Logger != nil {
-				Root.Logger.Critical(r)
+				Root.Logger.Critical(r, string(debug.Stack()))
 			} else {
-				fmt.Println("send exception caught", ssn.addr)
+				fmt.Println("send exception caught", r, string(debug.Stack()))
 			}
 		}
 	}()
@@ -211,45 +268,3 @@ func (ssn *Session) onsend() {
 	}
 }
 
-func (ssn *Session) IP() string {
-	return strings.Split(ssn.addr, ":")[0]
-}
-
-func (ssn *Session) Port() int {
-	p, _ := strconv.Atoi(strings.Split(ssn.addr, ":")[1])
-	return p
-}
-
-func (ssn *Session) Addr() string {
-	return ssn.addr
-}
-
-func (ssn *Session) SID() string {
-	return ssn.sid
-}
-
-func (ssn *Session) SetSendErrListener(l ErrorListener) {
-	ssn.senderrlistener = l
-}
-
-func (ssn *Session) SetRecvErrListener(l ErrorListener) {
-	ssn.recverrlistener = l
-}
-
-func (ssn *Session) handle_send_err(err error) {
-	if ssn.senderrlistener != nil {
-		ssn.senderrlistener.Handle(err)
-	} else {
-		Root.Logger.Error("write session failed: " + err.Error())
-	}
-	ssn.Close()
-}
-
-func (ssn *Session) handle_recv_err(err error) {
-	if ssn.recverrlistener != nil {
-		ssn.recverrlistener.Handle(err)
-	} else {
-		Root.Logger.Error("write session failed: " + err.Error())
-	}
-	ssn.Close()
-}

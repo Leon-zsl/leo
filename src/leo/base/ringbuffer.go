@@ -26,8 +26,14 @@ func (rb *RingBuffer) Push(pk *Packet) {
 
 func (rb *RingBuffer) Pop() *Packet {
 	rb.lock.Lock()
-	defer rb.lock.Unlock()
-	return rb.queue.Pop().(*Packet)
+	v := rb.queue.Pop()
+	rb.lock.Unlock()
+
+	if v != nil {
+		return v.(*Packet)
+	} else {
+		return nil
+	}
 }
 
 func (rb *RingBuffer) Count() int {
@@ -40,6 +46,12 @@ func (rb *RingBuffer) Empty() bool {
 
 func (rb *RingBuffer) Peek() *Packet {
 	rb.lock.Lock()
-	defer rb.lock.Unlock()
-	return rb.queue.Peek().(*Packet)
+	v := rb.queue.Peek()
+	rb.lock.Unlock()
+
+	if v != nil {
+		return v.(*Packet)
+	} else {
+		return nil
+	}
 }
