@@ -44,22 +44,22 @@ func (app *App) Startup() {
 
 		var cmd int32 = 16
 		buf := new(bytes.Buffer)
-		binary.Write(buf, binary.BigEndian, cmd)
+		binary.Write(buf, binary.BigEndian, cmd)		
 		snd_cmd := buf.Bytes()
 
 		ln := int32(len(snd_cmd) + len(snd_data))
 		buf = new(bytes.Buffer)
 		binary.Write(buf, binary.BigEndian, ln)
 		snd_ln := buf.Bytes()
-
-		fmt.Println("send: ", ln, snd_ln, snd_cmd, snd_data)
 		
 		val := append(append(snd_ln, snd_cmd...), snd_data...)
-		_, err := con.Write(val)
+		sn, err := con.Write(val)
 		if err != nil {
 			fmt.Println("write err:", err.Error())
 			continue
 		}
+
+		fmt.Println("send: ", sn, snd_ln, snd_cmd, snd_data)
 
 		tmp := make([]byte, 512)
 		n, err := con.Read(tmp)
@@ -77,6 +77,6 @@ func (app *App) Startup() {
 		binary.Read(buf, binary.BigEndian, &lc)
 
 		rcv_data := string(tmp[8:n])
-		fmt.Println("rcv: ", lr, lc, rcv_data)
+		fmt.Println("rcv: ", n, lr, lc, rcv_data)
 	}
 }

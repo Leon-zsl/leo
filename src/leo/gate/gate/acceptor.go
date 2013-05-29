@@ -38,27 +38,29 @@ func NewAcceptor(ip string, port int, count int) (mgr *Acceptor, err error) {
 func (mgr *Acceptor) init(ip string, port int, count int) error {
 	arr := []string{ip, strconv.Itoa(port)}
 	val := strings.Join(arr, ":")
-	addr, err := net.ResolveTCPAddr("tcp", val)
-	if err != nil {
-		return err
-	}
 	mgr.addr = val
 	if count <= 0 {
 		count = 1
 	}
 	mgr.listen_count = count
 
-	listener, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return err
-	}
-	mgr.listener = listener
-	
 	mgr.connListeners = make([]ConnectListener, 0, 8)
 	return nil
 }
 
 func (mgr *Acceptor) Start() {
+	addr, err := net.ResolveTCPAddr("tcp", mgr.addr)
+	if err != nil {
+		Root.Logger.Critical("acceptor start failed:", err)
+		return
+	}
+	listener, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		Root.Logger.Critical("acceptor start failed:", err)
+		return
+	}
+	mgr.listener = listener
+	
 	mgr.running = true
 	for i := 0; i < mgr.listen_count; i++ {
 		go mgr.handle_accept()

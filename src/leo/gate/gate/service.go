@@ -5,7 +5,8 @@ package gate
 
 import (
 	"fmt"
-	"runtime"
+	//"runtime"
+	"runtime/debug"
 )
 
 type EchoHandler struct {
@@ -27,7 +28,7 @@ func (h *EchoHandler) HandleSessionUpdate(ssn *Session) {
 			break
 		}
 
-		fmt.Println(pk.Op())
+		fmt.Println(pk.Op(), string(pk.Args()))
 		ssn.Send(pk)
 	}
 }
@@ -35,18 +36,11 @@ func (h *EchoHandler) HandleSessionUpdate(ssn *Session) {
 func (h *EchoHandler) HandleSessionError(ssn *Session, err error) {
 	fmt.Println("session error:", ssn.Addr(), ",", err.Error())
 
-	i := 1
-	for {
-		_, f, n, ok := runtime.Caller(i)
-		i++
-		if ok {
-			fmt.Println(f, n)
-		}
-	}
+	debug.PrintStack()
 }
 
 func (h *EchoHandler) HandleSessionClose(ssn *Session) {
-	fmt.Println("session close:", ssn.Addr)
+	fmt.Println("session close:", ssn.Addr())
 }
 
 type GateService struct {

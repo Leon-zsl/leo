@@ -54,6 +54,7 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 
 	ssn.recvbuf = make([]byte, 0)
 	conn.SetReadBuffer(2048)
+	ssn.conn = conn
 	
 	return nil
 }
@@ -171,9 +172,13 @@ func (ssn *Session) onrecv() {
 		if l == 0 {
 			continue
 		}
-
+		
 		ssn.recvbuf = append(ssn.recvbuf, tmpbuf[:l]...)
 		for {
+			if len(ssn.recvbuf) == 0 {
+				break
+			}
+
 			var ln int32 = 0
 			buf := bytes.NewBuffer(ssn.recvbuf[:4])
 			err := binary.Read(buf, binary.BigEndian, &ln)
@@ -182,18 +187,18 @@ func (ssn *Session) onrecv() {
 				break
 			}
 			
-			if len(ssn.recvbuf) < int(ln) {
+			if len(ssn.recvbuf) < int(ln + 4) {
 				break
 			}
 
-			pk, err := base.NewPacketFromBytes(ssn.recvbuf[4:ln])
+			pk, err := base.NewPacketFromBytes(ssn.recvbuf[4:ln+4])
 			if err != nil {
 				ssn.handle_recv_err(err)
 				break
 			}
 
 			ssn.recvq.Push(pk)
-			ssn.recvbuf = ssn.recvbuf[ln:]
+			ssn.recvbuf = ssn.recvbuf[ln+4:]
 		}
 	}
 }
@@ -242,7 +247,6 @@ func (ssn *Session) onsend() {
 			if l == 0 {
 				continue
 			}
-			l += 4
 
 			buf := new(bytes.Buffer)
 			err = binary.Write(buf, binary.BigEndian, l)
