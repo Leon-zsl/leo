@@ -55,10 +55,12 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 	ssn.recvbuf = make([]byte, 0)
 	conn.SetReadBuffer(2048)
 	
+	return nil
+}
+
+func (ssn *Session) Start() {
 	go ssn.onsend()
 	go ssn.onrecv()
-
-	return nil
 }
 
 func (ssn *Session) Closed() bool {
@@ -145,7 +147,6 @@ func (ssn *Session) onrecv() {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
-				fmt.Println("handle recv err 0000")
 				ssn.handle_recv_err(err)
 			} else if Root != nil && Root.Logger != nil {
 				Root.Logger.Critical(r, string(debug.Stack()))
@@ -160,8 +161,8 @@ func (ssn *Session) onrecv() {
 			break
 		}
 
-		tmpbuf := make([]byte, 2048)
-		l, err := ssn.conn.Read(tmpbuf)
+		var tmpbuf [2048]byte
+		l, err := ssn.conn.Read(tmpbuf[0:])
 		if err != nil {
 			ssn.handle_recv_err(err)
 			continue
@@ -177,7 +178,6 @@ func (ssn *Session) onrecv() {
 			buf := bytes.NewBuffer(ssn.recvbuf[:4])
 			err := binary.Read(buf, binary.BigEndian, &ln)
 			if err != nil {
-				fmt.Println("handle recv err 2222")
 				ssn.handle_recv_err(err)
 				break
 			}
@@ -188,7 +188,6 @@ func (ssn *Session) onrecv() {
 
 			pk, err := base.NewPacketFromBytes(ssn.recvbuf[4:ln])
 			if err != nil {
-				fmt.Println("handle recv err 3333")
 				ssn.handle_recv_err(err)
 				break
 			}

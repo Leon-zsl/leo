@@ -158,6 +158,7 @@ func (mgr *SessionMgr) handle_newsession() {
 				l.HandleNewSession(ssn)
 			}
 			mgr.AddSession(ssn)
+			ssn.Start()
 		}
 	}
 
