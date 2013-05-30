@@ -1,7 +1,7 @@
 /* this is connect to master
 */
 
-package gate
+package base
 
 import (
 	"net"
@@ -13,9 +13,12 @@ type Connector struct {
 	//todo
 }
 
+var ConnectorIns *Connector = nil
+
 func NewConnector () (conn *Connector, err error) {
 	conn = new(Connector)
 	err = conn.init()
+	ConnectorIns = conn
 	return
 }
 
@@ -37,6 +40,7 @@ func (conn *Connector) Connect(ip string, port int) (ssn *Session, err error) {
 	val := strings.Join(arr, ":")
 	addr, err := net.ResolveTCPAddr("tcp", val)
 	if err != nil {
+		LoggerIns.Error("connect err:", ip, port, err)
 		return
 	}
 

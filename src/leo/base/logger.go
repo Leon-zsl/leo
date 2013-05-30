@@ -16,6 +16,8 @@ type Logger struct {
 	loggersys *log.Logger
 }
 
+var LoggerIns *Logger = nil
+
 const (
 	LOG_TYPE_SYS = iota
 	LOG_TYPE_LOG4GO
@@ -25,6 +27,7 @@ const (
 func NewLogger(ty int, confile string) (lg *Logger, err error) {
 	lg = new(Logger)
 	err = lg.init(ty, confile)
+	LoggerIns = lg
 	return
 }
 

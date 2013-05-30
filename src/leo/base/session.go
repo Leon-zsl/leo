@@ -1,7 +1,7 @@
 /* this is the session
 */
 
-package gate
+package base
 
 import (
 	"fmt"
@@ -13,13 +13,11 @@ import (
 	"net"
 	"uuid"
 	"runtime/debug"
-
-	"leo/base"
 )
 
 type SessionHandler interface {
 	HandleSessionStart(ssn *Session)
-	HandleSessionMsg(ssn *Session, pkt* base.Packet)
+	HandleSessionMsg(ssn *Session, pkt* Packet)
 	HandleSessionClose(ssn *Session)
 	HandleSessionError(ssn *Session, err error)
 }
@@ -32,8 +30,8 @@ type Session struct {
 
 	conn *net.TCPConn
 
-//	recvq *base.RingBuffer
-	sendq *base.RingBuffer
+//	recvq *RingBuffer
+	sendq *RingBuffer
 
 	handlers []SessionHandler
 }
@@ -50,8 +48,8 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 
 	ssn.handlers = make([]SessionHandler, 0)
 
-	ssn.sendq = base.NewRingBuffer()
-//	ssn.recvq = base.NewRingBuffer()
+	ssn.sendq = NewRingBuffer()
+//	ssn.recvq = NewRingBuffer()
 
 	conn.SetReadBuffer(2048)
 	//	conn.SetNoDelay(true)
@@ -100,7 +98,7 @@ func (ssn *Session) Close() {
 func (ssn *Session) RegisterHandler(h SessionHandler) {
 	for _, v := range(ssn.handlers) {
 		if v == h {
-			Root.Logger.Warn("duplicate session handler")
+			LoggerIns.Warn("duplicate session handler")
 			return
 		}
 	}
@@ -117,7 +115,7 @@ func (ssn *Session) UnRegisterHandler(h SessionHandler) {
 	}
 }
 
-func (ssn *Session) Send(pk *base.Packet) {
+func (ssn *Session) Send(pk *Packet) {
 	if pk == nil {
 		return
 	}
@@ -147,7 +145,7 @@ func (ssn *Session) handle_send_err(err error) {
 			v.HandleSessionError(ssn, err)
 		}
 	} else {
-		Root.Logger.Error("write session failed: " + err.Error())
+		LoggerIns.Error("write session failed: " + err.Error())
 	}
 	ssn.Close()
 }
@@ -158,7 +156,7 @@ func (ssn *Session) handle_recv_err(err error) {
 			v.HandleSessionError(ssn, err)
 		}
 	} else {
-		Root.Logger.Error("read session failed: " + err.Error())
+		LoggerIns.Error("read session failed: " + err.Error())
 	}
 	ssn.Close()
 }
@@ -182,8 +180,8 @@ func (ssn *Session) onrecv() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
 				ssn.handle_recv_err(err)
-			} else if Root != nil && Root.Logger != nil {
-				Root.Logger.Critical(r, string(debug.Stack()))
+			} else if LoggerIns != nil {
+				LoggerIns.Critical(r, string(debug.Stack()))
 			} else {
 				fmt.Println("recv exception caught", r, string(debug.Stack()))
 			}
@@ -225,7 +223,7 @@ func (ssn *Session) onrecv() {
 				break
 			}
 
-			pk, err := base.NewPacketFromBytes(recvbuf[4:ln+4])
+			pk, err := NewPacketFromBytes(recvbuf[4:ln+4])
 			if err != nil {
 				ssn.handle_recv_err(err)
 				break
@@ -248,8 +246,8 @@ func (ssn *Session) onsend() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
 				ssn.handle_send_err(err)
-			} else if Root != nil && Root.Logger != nil {
-				Root.Logger.Critical(r, string(debug.Stack()))
+			} else if LoggerIns != nil {
+				LoggerIns.Critical(r, string(debug.Stack()))
 			} else {
 				fmt.Println("send exception caught", r, string(debug.Stack()))
 			}

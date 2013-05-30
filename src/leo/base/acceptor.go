@@ -1,7 +1,7 @@
 /* this is connect manager
 */
 
-package gate
+package base
 
 import (
 	"fmt"
@@ -24,12 +24,12 @@ type Acceptor struct {
 	ssnListeners []AcceptedSessionListener
 }
 
+var AcceptorIns *Acceptor = nil
+
 func NewAcceptor(ip string, port int, count int) (mgr *Acceptor, err error) {
 	mgr = new(Acceptor)
 	err = mgr.init(ip, port, count)
-	if err != nil {
-		mgr = nil
-	}
+	AcceptorIns = mgr
 	return
 }
 
@@ -51,34 +51,34 @@ func (mgr *Acceptor) Start() {
 
 	addr, err := net.ResolveTCPAddr("tcp", mgr.addr)
 	if err != nil {
-		Root.Logger.Critical("acceptor start failed:", err)
+		LoggerIns.Critical("acceptor start failed:", err)
 		return
 	}
 	listener, err := net.ListenTCP("tcp", addr)
 	if err != nil {
-		Root.Logger.Critical("acceptor start failed:", err)
+		LoggerIns.Critical("acceptor start failed:", err)
 		return
 	}
 
 // 	file, err := listener.File()
 // 	if err != nil {
-// 		Root.Logger.Critical("get tcp listener file failed", err)
+// 		LoggerIns.Critical("get tcp listener file failed", err)
 // 		return
 // 	}
 // 	err = syscall.SetsockoptInt(int(file.Fd()),
 // 		syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 // 	if err != nil {
-// 		Root.Logger.Critical("set tcp listener reuseaddr failed", err)
+// 		LoggerIns.Critical("set tcp listener reuseaddr failed", err)
 // 		return
 // 	}
 // 	s, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
 // 	if err != nil {
-// 		Root.Logger.Critical("get tcp listener file failed", err)
+// 		LoggerIns.Critical("get tcp listener file failed", err)
 // 		return
 // 	}
 // 	err = syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 // 	if err != nil {
-// 		Root.Logger.Critical("set tcp listener reuseaddr failed", err)
+// 		LoggerIns.Critical("set tcp listener reuseaddr failed", err)
 // 		return
 // 	}
 	mgr.listener = listener
@@ -123,8 +123,8 @@ func (mgr *Acceptor) UnRegisterAcceptedSessionListener(l AcceptedSessionListener
 func (mgr *Acceptor) handle_accept() {
 	defer func() {
 		if r := recover(); r != nil {
-			if Root != nil && Root.Logger != nil {
-				Root.Logger.Critical(r, string(debug.Stack()))
+			if LoggerIns != nil {
+				LoggerIns.Critical(r, string(debug.Stack()))
 			} else {
 				fmt.Println("handle_accept except", r, string(debug.Stack()))
 			}
@@ -138,8 +138,8 @@ func (mgr *Acceptor) handle_accept() {
 
 		conn, err := mgr.listener.AcceptTCP()
 		if err != nil {
-			if Root != nil && Root.Logger != nil {
-				Root.Logger.Error(err)
+			if LoggerIns != nil {
+				LoggerIns.Error(err)
 				debug.PrintStack()
 			} else {
 				fmt.Println("accept tcp error:", err.Error())
@@ -157,7 +157,7 @@ func (mgr *Acceptor) handle_accept() {
 
 		ssn, err := NewSession(conn)
 		if err != nil {
-			Root.Logger.Error("create new session failed: " + conn.RemoteAddr().String())
+			LoggerIns.Error("create new session failed: " + conn.RemoteAddr().String())
 			return
 		}
 

@@ -17,11 +17,6 @@ import (
 
 type Gate struct {
 	running bool
-	cfgFile ini.File
-
-	Logger *base.Logger
-	Acceptor *Acceptor
-	Connector *Connector
 
 	Service *GateService
 }
@@ -62,31 +57,41 @@ func NewGate() (gt *Gate, err error) {
 
 func (gate *Gate) init() error {
 	//parse config file
-	err := gate.parseConfig()
+	confile := path.Join(CONF_PATH, CONF_FILE)
+	conf, err := ini.LoadFile(confile)
 	if err != nil {
 		gate.close()
 		return err
 	}
 
 	//init logger
-	file, ok := gate.cfgFile.Get("logger", "config_file")
+	file, ok := conf.Get("logger", "config_file")
 	if !ok {
 		gate.close()
 		return errors.New("can not find logger/config_file in gate config file")
 	}
-	ty, ok := gate.cfgFile.Get("logger", "log_type")
+	ty, ok := conf.Get("logger", "log_type")
 	if !ok {
 		gate.close()
 		return errors.New("can not find logger/log_type in gate config file")
 	}
-	err = gate.createLogger(ty, path.Join(CONF_PATH, file))
+	v := base.LOG_TYPE_SYS
+	switch ty {
+	case "sys":
+		v = base.LOG_TYPE_SYS
+	case "log4go":
+		v = base.LOG_TYPE_LOG4GO
+	default:
+		fmt.Println("invalid log type", ty)
+	}
+	_, err = base.NewLogger(v, path.Join(CONF_PATH, file))
 	if err != nil {
 		gate.close()
 		return err
 	}
 
 	//init acceptor
-	port, ok := gate.cfgFile.Get("acceptor", "port")
+	port, ok := conf.Get("acceptor", "port")
 	if !ok {
 		gate.close()
 		return errors.New("can not find acceptor/port in gate config file")
@@ -96,12 +101,12 @@ func (gate *Gate) init() error {
 		gate.close()
 		return err
 	}
-	ip, ok := gate.cfgFile.Get("acceptor", "ip")
+	ip, ok := conf.Get("acceptor", "ip")
 	if !ok {
 		gate.close()
 		return errors.New("can not find acceptor/ip in gate config file")
 	}
-	count, ok := gate.cfgFile.Get("acceptor", "count")
+	count, ok := conf.Get("acceptor", "count")
 	if !ok {
 		gate.close()
 		return errors.New("can not find acceptor/count in gate config file")
@@ -111,20 +116,18 @@ func (gate *Gate) init() error {
 		gate.close()
 		return err
 	}
-	ac, err := NewAcceptor(ip, val, cval)
+	_, err = base.NewAcceptor(ip, val, cval)
 	if err != nil {
 		gate.close()
 		return err
 	}
-	gate.Acceptor = ac
 
 	//init connector
-	conn, err := NewConnector()
+	_, err = base.NewConnector()
 	if err != nil {
 		gate.close()
 		return err
 	}
-	gate.Connector = conn
 
 	//init service
 	sv, err := NewService()
@@ -140,13 +143,12 @@ func (gate *Gate) init() error {
 func (gate *Gate) Run() {
 	defer func() {
 		if r := recover(); r != nil {
-			if gate.Logger != nil {
-				gate.Logger.Critical(r, string(debug.Stack()))
+			if base.LoggerIns != nil {
+				base.LoggerIns.Critical(r, string(debug.Stack()))
 			} else {
 				fmt.Println("run time exception:", r, string(debug.Stack()))
 			}
 		}
-
 		//gate.save()
 		gate.close()
 	}()
@@ -179,62 +181,37 @@ func (gate *Gate) Shutdown() {
 func (gate *Gate) start() {
 	gate.running = true
 
-	gate.Acceptor.Start()
-	gate.Connector.Start()
+	base.AcceptorIns.Start()
+	base.ConnectorIns.Start()
+
 	gate.Service.Start()
 }
 
 
 func (gate *Gate) close() {
 	gate.running = false
+
 	if gate.Service != nil {
 		gate.Service.Close()
 		gate.Service = nil
 	}
-	if gate.Acceptor != nil {
-		gate.Acceptor.Close()
-		gate.Acceptor = nil
+
+	if base.AcceptorIns != nil {
+		base.AcceptorIns.Close()
+		base.AcceptorIns = nil
 	}
-	if gate.Connector != nil {
-		gate.Connector.Close()
-		gate.Connector = nil
+	if base.ConnectorIns != nil {
+		base.ConnectorIns.Close()
+		base.ConnectorIns = nil
 	}
-	if gate.Logger != nil {
-		gate.Logger.Close()
-		gate.Logger = nil
+	if base.LoggerIns != nil {
+		base.LoggerIns.Close()
+		base.LoggerIns = nil
 	}
 
-	gate.cfgFile = nil
 	Root = nil
 }
 
 func (gate *Gate) save() {
 	//todo:
-}
-
-func (gate *Gate) parseConfig() error {
-	confile := path.Join(CONF_PATH, CONF_FILE)
-	conf, err := ini.LoadFile(confile)
-	
-	if err == nil {
-		gate.cfgFile = conf
-	}
-	return err
-}
-
-func (gate *Gate) createLogger(ty, confile string) error {
-	v := base.LOG_TYPE_SYS
-	switch ty {
-	case "sys":
-		v = base.LOG_TYPE_SYS
-	case "log4go":
-		v = base.LOG_TYPE_LOG4GO
-	default:
-		fmt.Println("invalid log type", ty)
-	}
-	lg, err := base.NewLogger(v, confile)
-	if err == nil {
-		gate.Logger = lg
-	}
-	return err
 }
