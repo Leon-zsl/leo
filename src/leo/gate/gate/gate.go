@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"path"
 	"ini"
+	"time"
 	"runtime"
 	"runtime/debug"
 
@@ -21,7 +22,6 @@ type Gate struct {
 	Logger *base.Logger
 	Acceptor *Acceptor
 	Connector *Connector
-	SessionMgr *SessionMgr
 
 	Service *GateService
 }
@@ -126,14 +126,6 @@ func (gate *Gate) init() error {
 	}
 	gate.Connector = conn
 
-	//init session mgr
-	sm, err := NewSessionMgr()
-	if err != nil {
-		gate.close()
-		return err
-	}
-	gate.SessionMgr = sm
-	
 	//init service
 	sv, err := NewService()
 	if err != nil {
@@ -143,15 +135,6 @@ func (gate *Gate) init() error {
 	gate.Service = sv
 
 	return nil
-}
-
-func (gate *Gate) Start() {
-	gate.running = true
-
-	gate.Acceptor.Start()
-	gate.Connector.Start()
-	gate.SessionMgr.Start()
-	gate.Service.Start()
 }
 
 func (gate *Gate) Run() {
@@ -164,32 +147,49 @@ func (gate *Gate) Run() {
 			}
 		}
 
-		gate.save()
+		//gate.save()
 		gate.close()
 	}()
 
-	for {
+	gate.start()
+
+	c := time.Tick(60 * time.Millisecond)
+	for _ = range c {
+		gate.Service.Tick()
 		if !gate.running {
 			break
 		}
-
-		gate.SessionMgr.Update()
-		gate.Service.Update()
 	}
+
+// 	for {
+// 		if !gate.running {
+// 			break
+// 		}
+// 		gate.Service.Update()
+
+// 		time.Sleep(1e6 * 30)
+// 		fmt.Printf("%v\n", time.Now())
+// 	}
 }
 
 func (gate *Gate) Shutdown() {
 	gate.running = false
 }
 
+func (gate *Gate) start() {
+	gate.running = true
+
+	gate.Acceptor.Start()
+	gate.Connector.Start()
+	gate.Service.Start()
+}
+
+
 func (gate *Gate) close() {
+	gate.running = false
 	if gate.Service != nil {
 		gate.Service.Close()
 		gate.Service = nil
-	}
-	if gate.SessionMgr != nil {
-		gate.SessionMgr.Close()
-		gate.SessionMgr = nil
 	}
 	if gate.Acceptor != nil {
 		gate.Acceptor.Close()

@@ -13,11 +13,13 @@ import (
 
 	"leo/base"
 )
+
 type DB struct {
 	running bool
 	cfgFile ini.File
 	
 	Logger *base.Logger
+	Driver *Driver
 }
 
 var (
@@ -66,12 +68,12 @@ func (db *DB) init() error {
 	file, ok := db.cfgFile.Get("logger", "config_file")
 	if !ok {
 		db.close()
-		return errors.New("can not find logger/config_file in gate config file")
+		return errors.New("can not find logger/config_file in db config file")
 	}
 	ty, ok := db.cfgFile.Get("logger", "log_type")
 	if !ok {
 		db.close()
-		return errors.New("can not find logger/log_type in gate config file")
+		return errors.New("can not find logger/log_type in db config file")
 	}
 	err = db.create_logger(ty, path.Join(CONF_PATH, file))
 	if err != nil {
@@ -79,14 +81,49 @@ func (db *DB) init() error {
 		return err
 	}
 
+	db_addr, ok := db.cfgFile.Get("db", "host")
+	if !ok {
+		db.close()
+		return errors.New("can not find db/host in db config file")
+	}
+	db_name, ok := db.cfgFile.Get("db", "database")
+	if !ok {
+		db.close()
+		return errors.New("can not find db/database in db config file")
+	}
+	db_account, ok := db.cfgFile.Get("db", "username")
+	if !ok {
+		db.close()
+		return errors.New("can not find db/username in db config file")
+	}
+	db_pwd, ok := db.cfgFile.Get("db", "password")
+	if !ok {
+		db.close()
+		return errors.New("can not find db/password in db config file")
+	}
+	dr, err := NewDriver(db_addr, db_name, db_account, db_pwd)
+	if err != nil {
+		db.close()
+		return err
+	}
+	db.Driver = dr
+
 	//todo:
 
 	return nil
 }
 
 func (db *DB) Start() {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("start exception:", r, string(debug.Stack()))
+			db.close()
+		}
+	}()
+
 	db.running = true
 
+	db.Driver.Start()
 	//todo:
 }
 
@@ -104,8 +141,14 @@ func (db *DB) Run() {
 		db.close()
 	}()
 
-	//todo:
-	Root.Logger.Debug("this is db")
+	for {
+		if !db.running {
+			break
+		}
+
+		db.Driver.Update()
+		//todo:
+	}
 }
 
 func (db *DB) Shutdown() {
@@ -118,11 +161,16 @@ func (db *DB) save() {
 
 func (db *DB) close() {
 	//todo:
+	db.running = false
+
+	if db.Driver != nil {
+		db.Driver.Close()
+		db = nil
+	}
 	if db.Logger != nil {
 		db.Logger.Close()
 		db.Logger = nil
 	}
-
 	db.cfgFile = nil
 	Root = nil
 }

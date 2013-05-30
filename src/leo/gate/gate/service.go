@@ -21,6 +21,10 @@ func NewEchoHandler(ssn *Session) *EchoHandler {
 	return h
 }
 
+func (h *EchoHandler) HandleSessionStart(ssn *Session) {
+	fmt.Println("session start:", ssn.Addr())
+}
+
 func (h *EchoHandler) HandleSessionMsg(ssn *Session, pkt *base.Packet) {
 	fmt.Println(pkt.Op(), string(pkt.Args()))
 	ssn.Send(pkt)
@@ -45,23 +49,23 @@ func NewService() (service *GateService, err error) {
 }
 
 func (srv *GateService) init() error {
-	//donothing
+	Root.Acceptor.RegisterAcceptedSessionListener(srv)
 	return nil
 }
 
 func (srv *GateService) Start() {
-	Root.SessionMgr.RegisterNewSessionListener(srv)
+	//do nothing
 }
 
 func (srv *GateService) Close() {
-	//donothing
+	//do nothing
 }
 
-func (srv *GateService) Update() {
-	//donothing
+func (srv *GateService) Tick() {
+	//do nothing
 }
 
-func (srv *GateService) HandleNewSession(ssn *Session) {
-	fmt.Println("new session: ", ssn.Addr())
+func (srv *GateService) HandleAcceptedSession(ssn *Session) {
+	fmt.Println("accept session: ", ssn.Addr())
 	NewEchoHandler(ssn)
 }

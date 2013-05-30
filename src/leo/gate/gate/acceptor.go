@@ -8,13 +8,11 @@ import (
 	"strconv"
 	"strings"
 	"net"
-	"sync"
-//	"syscall"
 	"runtime/debug"
 )
 
-type ConnectListener interface {
-	Handle(conn *net.TCPConn)
+type AcceptedSessionListener interface {
+	HandleAcceptedSession(ssn *Session)
 }
 
 type Acceptor struct {
@@ -22,8 +20,8 @@ type Acceptor struct {
 	addr string
 	listen_count int
 	listener *net.TCPListener
-	connListeners []ConnectListener
-	lock sync.Mutex
+
+	ssnListeners []AcceptedSessionListener
 }
 
 func NewAcceptor(ip string, port int, count int) (mgr *Acceptor, err error) {
@@ -44,7 +42,7 @@ func (mgr *Acceptor) init(ip string, port int, count int) error {
 	}
 	mgr.listen_count = count
 
-	mgr.connListeners = make([]ConnectListener, 0, 8)
+	mgr.ssnListeners = make([]AcceptedSessionListener, 0)
 	return nil
 }
 
@@ -97,26 +95,26 @@ func (mgr *Acceptor) Close() {
 	}
 }
 
-func (mgr *Acceptor) RegisterConnListener(l ConnectListener) {
-	mgr.lock.Lock()
-	defer mgr.lock.Unlock()
+func (mgr *Acceptor) RegisterAcceptedSessionListener(l AcceptedSessionListener) {
+// 	mgr.connlock.Lock()
+// 	defer mgr.connlock.Unlock()
 
-	for _, v := range(mgr.connListeners) {
+	for _, v := range(mgr.ssnListeners) {
 		if v == l {
 			return
 		}
 	}
-	mgr.connListeners = append(mgr.connListeners, l)
+	mgr.ssnListeners = append(mgr.ssnListeners, l)
 }
 
-func (mgr *Acceptor) UnRegisterConnListener(l ConnectListener) {
-	mgr.lock.Lock()
-	defer mgr.lock.Unlock()
+func (mgr *Acceptor) UnRegisterAcceptedSessionListener(l AcceptedSessionListener) {
+// 	mgr.connlock.Lock()
+// 	defer mgr.connlock.Unlock()
 
-	for i, v := range(mgr.connListeners) {
+	for i, v := range(mgr.ssnListeners) {
 		if v == l {
-			mgr.connListeners = append(mgr.connListeners[:i],
-				mgr.connListeners[i+1:]...)
+			mgr.ssnListeners = append(mgr.ssnListeners[:i],
+				mgr.ssnListeners[i+1:]...)
 			break
 		}
 	}
@@ -148,18 +146,24 @@ func (mgr *Acceptor) handle_accept() {
 			}
 			continue
 		}
-		mgr.handle_conn(conn)
-	}
-}
 
-func (mgr *Acceptor) handle_conn(conn *net.TCPConn) {
-//	conn.SetNoDelay(true)
-//	conn.SetKeepAlive(true)
-//	conn.SetLinger(0)
+		// 	mgr.connlock.Lock()
+		// 	defer mgr.connlock.Unlock()
 
-	mgr.lock.Lock()
-	defer mgr.lock.Unlock()
-	for _, v := range mgr.connListeners {
-		v.Handle(conn)
+		if len(mgr.ssnListeners) == 0 {
+			conn.Close()
+			continue
+		}
+
+		ssn, err := NewSession(conn)
+		if err != nil {
+			Root.Logger.Error("create new session failed: " + conn.RemoteAddr().String())
+			return
+		}
+
+		for _, v := range mgr.ssnListeners {
+			v.HandleAcceptedSession(ssn)
+		}
+		ssn.Start()
 	}
 }

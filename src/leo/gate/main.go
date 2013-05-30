@@ -12,7 +12,6 @@ func startup() {
 	if err != nil {
 		fmt.Println("gate server create failed")
 	} else {
-		gate.Start()
 		gate.Run()
 	}
 }
