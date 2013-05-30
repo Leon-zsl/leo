@@ -29,6 +29,7 @@ func NewLogger(ty int, confile string) (lg *Logger, err error) {
 }
 
 func (lg *Logger) init(ty int, confile string) error {
+	lg.lgtype = ty
 	if ty == LOG_TYPE_SYS {
 		lg.loggersys = log.New(os.Stderr, "", log.Lshortfile)
 		return nil

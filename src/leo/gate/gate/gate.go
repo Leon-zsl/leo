@@ -42,9 +42,6 @@ func NewGate() (gt *Gate, err error) {
 		}
 	}()
 
-	err = nil
-	gt = nil
-
 	if Root != nil {
 		gt = Root
 		return
@@ -145,11 +142,12 @@ func (gate *Gate) init() error {
 	}
 	gate.Service = sv
 
-	gate.running = true
 	return nil
 }
 
 func (gate *Gate) Start() {
+	gate.running = true
+
 	gate.Acceptor.Start()
 	gate.Connector.Start()
 	gate.SessionMgr.Start()

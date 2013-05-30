@@ -5,8 +5,21 @@ package main
 
 import (
 	"fmt"
-	)
+	"leo/db/db"
+)
+
+func startup() {
+	db, err := db.NewDB()
+	if err != nil {
+		fmt.Println("db create failed")
+	} else {
+		db.Start()
+		db.Run()
+	}
+}
 
 func main() {
-	fmt.Println("this is db server")
+	fmt.Println("start db server")
+	startup()
+	fmt.Println("db server close")
 }
