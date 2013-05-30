@@ -19,8 +19,10 @@ type Gate struct {
 	cfgFile ini.File
 
 	Logger *base.Logger
-	SessionMgr *SessionMgr
 	Acceptor *Acceptor
+	Connector *Connector
+	SessionMgr *SessionMgr
+
 	Service *GateService
 }
 
@@ -35,10 +37,8 @@ func NewGate() (gt *Gate, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("create gate failed!", string(debug.Stack()))
+			fmt.Println("create gate failed!", r, string(debug.Stack()))
 			gt = nil
-			err = base.NewLeoError(base.LeoErrStartFailed, 
-				"gate start failed")
 		}
 	}()
 
@@ -53,7 +53,8 @@ func NewGate() (gt *Gate, err error) {
 	Root = new(Gate)
 	err = Root.init()
 	if err != nil {
-		fmt.Println("init gate failed")
+		fmt.Println("init gate failed", err)
+		debug.PrintStack()
 		Root = nil
 		return
 	}
@@ -64,7 +65,11 @@ func NewGate() (gt *Gate, err error) {
 
 func (gate *Gate) init() error {
 	//parse config file
-	gate.parseConfig()
+	err := gate.parseConfig()
+	if err != nil {
+		gate.close()
+		return err
+	}
 
 	//init logger
 	file, ok := gate.cfgFile.Get("logger", "config_file")
@@ -77,7 +82,7 @@ func (gate *Gate) init() error {
 		gate.close()
 		return errors.New("can not find logger/log_type in gate config file")
 	}
-	err := gate.createLogger(ty, path.Join(CONF_PATH, file))
+	err = gate.createLogger(ty, path.Join(CONF_PATH, file))
 	if err != nil {
 		gate.close()
 		return err
@@ -92,7 +97,7 @@ func (gate *Gate) init() error {
 	val, err := strconv.Atoi(port)
 	if err != nil {
 		gate.close()
-		return errors.New("listen port is invalid")
+		return err
 	}
 	ip, ok := gate.cfgFile.Get("acceptor", "ip")
 	if !ok {
@@ -107,7 +112,7 @@ func (gate *Gate) init() error {
 	cval, err := strconv.Atoi(count)
 	if err != nil {
 		gate.close()
-		return errors.New("listen count is invalid")
+		return err
 	}
 	ac, err := NewAcceptor(ip, val, cval)
 	if err != nil {
@@ -116,6 +121,14 @@ func (gate *Gate) init() error {
 	}
 	gate.Acceptor = ac
 
+	//init connector
+	conn, err := NewConnector()
+	if err != nil {
+		gate.close()
+		return err
+	}
+	gate.Connector = conn
+
 	//init session mgr
 	sm, err := NewSessionMgr()
 	if err != nil {
@@ -123,7 +136,7 @@ func (gate *Gate) init() error {
 		return err
 	}
 	gate.SessionMgr = sm
-
+	
 	//init service
 	sv, err := NewService()
 	if err != nil {
@@ -132,16 +145,13 @@ func (gate *Gate) init() error {
 	}
 	gate.Service = sv
 
-	//init connector
-	//todo:
-	
 	gate.running = true
 	return nil
 }
 
 func (gate *Gate) Start() {
-	gate.Logger.Info("gate start now")
 	gate.Acceptor.Start()
+	gate.Connector.Start()
 	gate.SessionMgr.Start()
 	gate.Service.Start()
 }
@@ -165,7 +175,6 @@ func (gate *Gate) Run() {
 			break
 		}
 
-		gate.Acceptor.Update()
 		gate.SessionMgr.Update()
 		gate.Service.Update()
 	}
@@ -176,8 +185,6 @@ func (gate *Gate) Shutdown() {
 }
 
 func (gate *Gate) close() {
-	gate.Logger.Info("gate close now")
-
 	if gate.Service != nil {
 		gate.Service.Close()
 		gate.Service = nil
@@ -189,6 +196,10 @@ func (gate *Gate) close() {
 	if gate.Acceptor != nil {
 		gate.Acceptor.Close()
 		gate.Acceptor = nil
+	}
+	if gate.Connector != nil {
+		gate.Connector.Close()
+		gate.Connector = nil
 	}
 	if gate.Logger != nil {
 		gate.Logger.Close()

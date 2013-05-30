@@ -122,10 +122,6 @@ func (mgr *Acceptor) UnRegisterConnListener(l ConnectListener) {
 	}
 }
 
-func (mgr *Acceptor) Update() {
-	//todo:
-}
-
 func (mgr *Acceptor) handle_accept() {
 	defer func() {
 		if r := recover(); r != nil {

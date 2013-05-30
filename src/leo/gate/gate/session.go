@@ -18,7 +18,7 @@ import (
 )
 
 type SessionHandler interface {
-	HandleSessionUpdate(ssn *Session)
+	HandleSessionMsg(ssn *Session, pkt* base.Packet)
 	HandleSessionClose(ssn *Session)
 	HandleSessionError(ssn *Session, err error)
 }
@@ -35,7 +35,7 @@ type Session struct {
 	recvbuf []byte
 	conn *net.TCPConn
 
-	handler SessionHandler
+	handlers []SessionHandler
 }
 
 func NewSession(conn *net.TCPConn) (session *Session, err error) {
@@ -48,6 +48,8 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 	ssn.closed = false
 	ssn.addr = conn.RemoteAddr().String()
 	ssn.sid = uuid.New()
+
+	ssn.handlers = make([]SessionHandler, 0)
 
 	ssn.recvq = base.NewRingBuffer()
 	ssn.sendq = base.NewRingBuffer()
@@ -69,8 +71,8 @@ func (ssn *Session) Closed() bool {
 }
 
 func (ssn *Session) Close() {
-	if ssn.handler != nil {
-		ssn.handler.HandleSessionClose(ssn)
+	for _, v := range(ssn.handlers) {
+		v.HandleSessionClose(ssn)
 	}
 
 	if ssn.conn != nil {
@@ -81,21 +83,35 @@ func (ssn *Session) Close() {
 }
 
 func (ssn *Session) Update() {
-	if ssn.handler == nil {
-		for {
-			pk := ssn.Recv()
-			if pk == nil {
-				break
-			}
+	for {
+		pk := ssn.Recv()
+		if pk == nil {
+			break
 		}
-		return
-	}
 
-	ssn.handler.HandleSessionUpdate(ssn)
+		for _, h := range(ssn.handlers) {
+			h.HandleSessionMsg(ssn, pk)
+		}
+	}
 }
 
-func (ssn *Session) SetHandler(l SessionHandler) {
-	ssn.handler = l
+func (ssn *Session) RegisterHandler(h SessionHandler) {
+	for _, v := range(ssn.handlers) {
+		if v == h {
+			return
+		}
+	}
+	ssn.handlers = append(ssn.handlers, h)
+}
+
+func (ssn *Session) UnRegisterHandler(h SessionHandler) {
+	for i, v := range(ssn.handlers) {
+		if v == h {
+			ssn.handlers = append(ssn.handlers[:i],
+				ssn.handlers[i+1:]...)
+			break
+		}
+	}
 }
 
 func (ssn *Session) Recv() *base.Packet {
@@ -127,8 +143,10 @@ func (ssn *Session) SID() string {
 }
 
 func (ssn *Session) handle_send_err(err error) {
-	if ssn.handler != nil {
-		ssn.handler.HandleSessionError(ssn, err)
+	if len(ssn.handlers) > 0 {
+		for _, v := range(ssn.handlers) {
+			v.HandleSessionError(ssn, err)
+		}
 	} else {
 		Root.Logger.Error("write session failed: " + err.Error())
 	}
@@ -136,8 +154,10 @@ func (ssn *Session) handle_send_err(err error) {
 }
 
 func (ssn *Session) handle_recv_err(err error) {
-	if ssn.handler != nil {
-		ssn.handler.HandleSessionError(ssn, err)
+	if len(ssn.handlers) > 0 {
+		for _, v := range(ssn.handlers) {
+			v.HandleSessionError(ssn, err)
+		}
 	} else {
 		Root.Logger.Error("read session failed: " + err.Error())
 	}

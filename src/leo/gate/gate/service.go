@@ -6,6 +6,7 @@ package gate
 import (
 	"fmt"
 	"runtime/debug"
+	"leo/base"
 )
 
 type EchoHandler struct {
@@ -16,19 +17,13 @@ func NewEchoHandler(ssn *Session) *EchoHandler {
 	fmt.Println("new echo handler")
 	h := new(EchoHandler)
 	h.ssn = ssn
-	ssn.SetHandler(h)
+	ssn.RegisterHandler(h)
 	return h
 }
 
-func (h *EchoHandler) HandleSessionUpdate(ssn *Session) {
-	for {
-		pk := ssn.Recv()
-		if pk == nil {
-			break
-		}
-		fmt.Println(pk.Op(), string(pk.Args()))
-		ssn.Send(pk)
-	}
+func (h *EchoHandler) HandleSessionMsg(ssn *Session, pkt *base.Packet) {
+	fmt.Println(pkt.Op(), string(pkt.Args()))
+	ssn.Send(pkt)
 }
 
 func (h *EchoHandler) HandleSessionError(ssn *Session, err error) {
