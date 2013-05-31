@@ -8,6 +8,7 @@ import (
 	"errors"
 	"path"
 	"ini"
+	"time"
 	"runtime"
 	"runtime/debug"
 
@@ -16,10 +17,10 @@ import (
 
 type DB struct {
 	running bool
-	cfgFile ini.File
 	
-	Logger *base.Logger
 	Driver *Driver
+
+	Service *Service
 }
 
 var (
@@ -58,45 +59,55 @@ func NewDB() (db *DB, err error) {
 
 func (db *DB) init() error {
 	//parse config file
-	err := db.parse_config()
+	confile := path.Join(CONF_PATH, CONF_FILE)
+	conf, err := ini.LoadFile(confile)
 	if err != nil {
 		db.close()
 		return err
 	}
 
 	//init logger
-	file, ok := db.cfgFile.Get("logger", "config_file")
+	file, ok := conf.Get("logger", "config_file")
 	if !ok {
 		db.close()
 		return errors.New("can not find logger/config_file in db config file")
 	}
-	ty, ok := db.cfgFile.Get("logger", "log_type")
+	ty, ok := conf.Get("logger", "log_type")
 	if !ok {
 		db.close()
 		return errors.New("can not find logger/log_type in db config file")
 	}
-	err = db.create_logger(ty, path.Join(CONF_PATH, file))
+	v := base.LOG_TYPE_SYS
+	switch ty {
+	case "sys":
+		v = base.LOG_TYPE_SYS
+	case "log4go":
+		v = base.LOG_TYPE_LOG4GO
+	default:
+		fmt.Println("invalid log type", ty)
+	}
+	_, err = base.NewLogger(v, path.Join(CONF_PATH, file))
 	if err != nil {
 		db.close()
 		return err
 	}
 
-	db_addr, ok := db.cfgFile.Get("db", "host")
+	db_addr, ok := conf.Get("db", "host")
 	if !ok {
 		db.close()
 		return errors.New("can not find db/host in db config file")
 	}
-	db_name, ok := db.cfgFile.Get("db", "database")
+	db_name, ok := conf.Get("db", "database")
 	if !ok {
 		db.close()
 		return errors.New("can not find db/database in db config file")
 	}
-	db_account, ok := db.cfgFile.Get("db", "username")
+	db_account, ok := conf.Get("db", "username")
 	if !ok {
 		db.close()
 		return errors.New("can not find db/username in db config file")
 	}
-	db_pwd, ok := db.cfgFile.Get("db", "password")
+	db_pwd, ok := conf.Get("db", "password")
 	if !ok {
 		db.close()
 		return errors.New("can not find db/password in db config file")
@@ -108,46 +119,37 @@ func (db *DB) init() error {
 	}
 	db.Driver = dr
 
-	//todo:
+	sv, err := NewService()
+	if err != nil {
+		db.close()
+		return err
+	}
+	db.Service = sv
 
+	//todo:
 	return nil
-}
-
-func (db *DB) Start() {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("start exception:", r, string(debug.Stack()))
-			db.close()
-		}
-	}()
-
-	db.running = true
-
-	db.Driver.Start()
-	//todo:
 }
 
 func (db *DB) Run() {
 	defer func() {
 		if r := recover(); r != nil {
-			if db.Logger != nil {
-				db.Logger.Critical(r, string(debug.Stack()))
+			if base.LoggerIns != nil {
+				base.LoggerIns.Critical(r, string(debug.Stack()))
 			} else {
 				fmt.Println("run time exception:", r, string(debug.Stack()))
 			}
 		}
-
-		db.save()
 		db.close()
 	}()
 
-	for {
+	db.start()
+
+	c := time.Tick(60 * time.Millisecond)
+	for _ = range c {
+		db.Service.Tick()
 		if !db.running {
 			break
 		}
-
-		db.Driver.Update()
-		//todo:
 	}
 }
 
@@ -159,45 +161,30 @@ func (db *DB) save() {
 	//todo:
 }
 
-func (db *DB) close() {
+func (db *DB) start() {
+	db.running = true
+
+	db.Driver.Start()
+	db.Service.Start()
 	//todo:
+}
+
+func (db *DB) close() {
 	db.running = false
 
+	//todo:
+	if db.Service != nil {
+		db.Service.Close()
+		db = nil
+	}
 	if db.Driver != nil {
 		db.Driver.Close()
 		db = nil
 	}
-	if db.Logger != nil {
-		db.Logger.Close()
-		db.Logger = nil
+	if base.LoggerIns != nil {
+		base.LoggerIns.Close()
+		base.LoggerIns = nil
 	}
-	db.cfgFile = nil
+
 	Root = nil
-}
-
-func (db *DB) parse_config() error {
-	confile := path.Join(CONF_PATH, CONF_FILE)
-	conf, err := ini.LoadFile(confile)
-	
-	if err == nil {
-		db.cfgFile = conf
-	}
-	return err
-}
-
-func (db *DB) create_logger(ty, confile string) error {
-	v := base.LOG_TYPE_SYS
-	switch ty {
-	case "sys":
-		v = base.LOG_TYPE_SYS
-	case "log4go":
-		v = base.LOG_TYPE_LOG4GO
-	default:
-		fmt.Println("invalid log type", ty)
-	}
-	lg, err := base.NewLogger(v, confile)
-	if err == nil {
-		db.Logger = lg
-	}
-	return err
 }

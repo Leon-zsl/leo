@@ -24,12 +24,12 @@ type Acceptor struct {
 	ssnListeners []AcceptedSessionListener
 }
 
-var AcceptorIns *Acceptor = nil
+//var AcceptorIns *Acceptor = nil
 
 func NewAcceptor(ip string, port int, count int) (mgr *Acceptor, err error) {
 	mgr = new(Acceptor)
 	err = mgr.init(ip, port, count)
-	AcceptorIns = mgr
+	//AcceptorIns = mgr
 	return
 }
 

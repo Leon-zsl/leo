@@ -50,7 +50,7 @@ func NewService() (service *GateService, err error) {
 }
 
 func (srv *GateService) init() error {
-	base.AcceptorIns.RegisterAcceptedSessionListener(srv)
+	Root.Acceptor.RegisterAcceptedSessionListener(srv)
 	return nil
 }
 

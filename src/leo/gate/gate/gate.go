@@ -18,6 +18,9 @@ import (
 type Gate struct {
 	running bool
 
+	Acceptor *base.Acceptor
+	Connector *base.Connector
+
 	Service *GateService
 }
 
@@ -116,18 +119,20 @@ func (gate *Gate) init() error {
 		gate.close()
 		return err
 	}
-	_, err = base.NewAcceptor(ip, val, cval)
+	ac, err := base.NewAcceptor(ip, val, cval)
 	if err != nil {
 		gate.close()
 		return err
 	}
+	gate.Acceptor = ac
 
 	//init connector
-	_, err = base.NewConnector()
+	co, err := base.NewConnector()
 	if err != nil {
 		gate.close()
 		return err
 	}
+	gate.Connector = co
 
 	//init service
 	sv, err := NewService()
@@ -181,8 +186,8 @@ func (gate *Gate) Shutdown() {
 func (gate *Gate) start() {
 	gate.running = true
 
-	base.AcceptorIns.Start()
-	base.ConnectorIns.Start()
+	gate.Acceptor.Start()
+	gate.Connector.Start()
 
 	gate.Service.Start()
 }
@@ -196,13 +201,13 @@ func (gate *Gate) close() {
 		gate.Service = nil
 	}
 
-	if base.AcceptorIns != nil {
-		base.AcceptorIns.Close()
-		base.AcceptorIns = nil
+	if gate.Acceptor != nil {
+		gate.Acceptor.Close()
+		gate.Acceptor = nil
 	}
-	if base.ConnectorIns != nil {
-		base.ConnectorIns.Close()
-		base.ConnectorIns = nil
+	if gate.Connector != nil {
+		gate.Connector.Close()
+		gate.Connector = nil
 	}
 	if base.LoggerIns != nil {
 		base.LoggerIns.Close()

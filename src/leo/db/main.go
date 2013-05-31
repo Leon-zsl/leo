@@ -13,7 +13,6 @@ func startup() {
 	if err != nil {
 		fmt.Println("db create failed")
 	} else {
-		db.Start()
 		db.Run()
 	}
 }

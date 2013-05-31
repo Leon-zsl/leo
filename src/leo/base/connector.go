@@ -13,12 +13,12 @@ type Connector struct {
 	//todo
 }
 
-var ConnectorIns *Connector = nil
+//var ConnectorIns *Connector = nil
 
 func NewConnector () (conn *Connector, err error) {
 	conn = new(Connector)
 	err = conn.init()
-	ConnectorIns = conn
+	//ConnectorIns = conn
 	return
 }
 

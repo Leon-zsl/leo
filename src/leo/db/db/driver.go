@@ -5,7 +5,9 @@ package db
 
 import (
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"	
+	_ "github.com/go-sql-driver/mysql"
+
+	"leo/base"
 )
 
 type Driver struct {
@@ -40,7 +42,7 @@ func (driver *Driver) Start() {
 		"?" + "charset=" + "utf8")
 
 	if err != nil {
-		Root.Logger.Critical(err)
+		base.LoggerIns.Critical(err)
 		return
 	}
 
@@ -56,5 +58,8 @@ func (driver *Driver) Close() {
 	}
 }
 
-func (driver *Driver) Update() {
+func (driver *Driver) Exec(sql string) {
+}
+
+func (driver *Driver) Query(sql string) {
 }
