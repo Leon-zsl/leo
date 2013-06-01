@@ -6,13 +6,13 @@ package db
 import (
 	"strconv"
 	"errors"
-	"sync"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 
 	"leo/base"
 )
 
+//goroutine safe
 type Driver struct {
 	running bool
 
@@ -24,9 +24,7 @@ type Driver struct {
 	db *sql.DB
 
 	usecache bool
-	cache Cache
-
-	lock sync.Mutex
+	cache *Cache
 }
 
 func NewDriver(addr, name, account, pwd string, usecache bool) (driver *Driver, err error) {
@@ -80,9 +78,6 @@ func (driver *Driver) Get(table string, key int, keyname string) (*base.Record, 
 	if table == "" {
 		return nil, errors.New("table is invalid")
 	}
-
-	driver.lock.Lock()
-	defer driver.lock.Unlock()
 
 	if driver.usecache {
 		val := driver.cache.Get(table, key)
@@ -138,9 +133,6 @@ func (driver *Driver) Get(table string, key int, keyname string) (*base.Record, 
 }
 
 func (driver *Driver) Set(table string, key int, keyname string, record *base.Record) error {
-	driver.lock.Lock()
-	defer driver.lock.Unlock()
-
 	sql := "UPDATE " + table + " SET "
 	idx := 0
 	for _, name := range(record.Names()) {
@@ -167,9 +159,6 @@ func (driver *Driver) Set(table string, key int, keyname string, record *base.Re
 }
 
 func (driver *Driver) Add(table string, key int, keyname string, record *base.Record) error {
-	driver.lock.Lock()
-	defer driver.lock.Unlock()
-
 	sql := "INSERT INTO " + table + " VALUES " + "("
 	idx := 0
 	for _, _ = range(record.Names()) {
@@ -196,9 +185,6 @@ func (driver *Driver) Add(table string, key int, keyname string, record *base.Re
 }
 
 func (driver *Driver) Del(table string, key int, keyname string) error {
-	driver.lock.Lock()
-	defer driver.lock.Unlock()
-
 	sql := "DELETE FROM " + table + " WHERE " + keyname + "=?"
 	_, err := driver.db.Exec(sql, key)
 	if err != nil {
@@ -211,4 +197,3 @@ func (driver *Driver) Del(table string, key int, keyname string) error {
 
 	return nil
 }
-

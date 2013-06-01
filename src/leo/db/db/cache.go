@@ -4,87 +4,86 @@
 package db
 
 import (
+	"sync"
+	"strconv"
 	"leo/base"
 )
 
-type RecordMap map[int] *base.Record
-type Cache map[string] RecordMap
+//goroutine safe
+type Cache struct {
+	data map[string] *base.Record
+	lock sync.RWMutex
+}
 
-func NewCache() (cache Cache, err error) {
-	cache = make(Cache)
+func NewCache() (cache *Cache, err error) {
+	cache = new(Cache)
 	err = cache.init()
 	return
 }
 
-func (cache Cache) init() error {
+func (cache *Cache) init() error {
+	cache.data = make(map[string] *base.Record)
 	return nil
 }
 
-func (cache Cache) Start() {
+func (cache *Cache) Start() {
 }
 
-func (cache Cache) Close() {
+func (cache *Cache) Close() {
 }
 
-func (cache Cache) Get(table string, key int) (*base.Record) {
-	if table == "" {
+func (cache *Cache) Get(table string, key int) (*base.Record) {
+	k := cache.map_key(table, key)
+	if k == "" {
 		return nil
 	}
 
-	mp, ok := cache[table]
+	cache.lock.RLock()
+	v, ok := cache.data[k]
+	cache.lock.RUnlock()
+
 	if !ok {
 		return nil
 	}
-
-	rcd, ok := mp[key]
-	if !ok {
-		return nil
-	}
-
-	return rcd
+	return v
 }
 
-func (cache Cache) Set(table string, key int, record *base.Record) {
-	if table == "" {
+func (cache *Cache) Set(table string, key int, record *base.Record) {
+	k := cache.map_key(table, key)
+	if k == "" {
 		return
 	}
 
-	mp, ok := cache[table]
-	if !ok {
-		mp = make(RecordMap)
-		cache[table] = mp
-	}
-
-	mp[key] = record
+	cache.lock.Lock()
+	cache.data[k] = record
+	cache.lock.Unlock()
 }
 
-func (cache Cache) Add(table string, key int, record *base.Record) {
-	if table == "" {
+func (cache *Cache) Add(table string, key int, record *base.Record) {
+	k := cache.map_key(table, key)
+	if k == "" {
 		return
 	}
 
-	mp, ok := cache[table]
-	if !ok {
-		mp = make(RecordMap)
-		cache[table] = mp
-	}
-
-	mp[key] = record
+	cache.lock.Lock()
+	cache.data[k] = record
+	cache.lock.Unlock()
 }
 
-func (cache Cache) Del(table string, key int) {
-	if table == "" {
+func (cache *Cache) Del(table string, key int) {
+	k := cache.map_key(table, key)
+	if k == "" {
 		return
 	}
 
-	mp, ok := cache[table]
-	if !ok {
-		return
-	}
+	cache.lock.Lock()
+	delete(cache.data, k)
+	cache.lock.Unlock()
+}
 
-	delete(mp, key)
-
-	if len(mp) == 0 {
-		delete(cache, table)
+func (cache *Cache) map_key(table string, key int) string {
+	if table == "" || key <= 0 {
+		return ""
 	}
+	return table + strconv.Itoa(key)
 }
