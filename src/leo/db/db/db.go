@@ -112,7 +112,16 @@ func (db *DB) init() error {
 		db.close()
 		return errors.New("can not find db/password in db config file")
 	}
-	dr, err := NewDriver(db_addr, db_name, db_account, db_pwd)
+	cache, ok := conf.Get("db", "cache")
+	if !ok {
+		db.close()
+		return errors.New("can not find db/cache in db config file")
+	}
+	db_cache := false
+	if cache == "true" {
+		db_cache = true
+	}
+	dr, err := NewDriver(db_addr, db_name, db_account, db_pwd, db_cache)
 	if err != nil {
 		db.close()
 		return err
