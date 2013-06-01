@@ -95,6 +95,10 @@ func (ssn *Session) Close() {
 	ssn.closed = true
 }
 
+func (ssn *Session) Conn() *net.TCPConn {
+	return ssn.conn
+}
+
 func (ssn *Session) RegisterHandler(h SessionHandler) {
 	for _, v := range(ssn.handlers) {
 		if v == h {
