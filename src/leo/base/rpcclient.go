@@ -8,6 +8,11 @@ import (
 	"strconv"
 	"net/rpc"
 )
+
+type RpcCallback interface {
+	HandlerReplay(reply interface{}, err error)
+}
+
 type RpcClient struct {
 	running bool
 	ip string
@@ -54,4 +59,16 @@ func (client *RpcClient) Call(method string, args interface{}, reply interface{}
 
 func (client *RpcClient) Go(method string, args interface{}, reply interface{}, done chan *rpc.Call) *rpc.Call {
 	return client.cl.Go(method, args, reply, done)
+}
+
+func (client *RpcClient) CallAsync(method string, args interface{}, reply interface{}, cb RpcCallback) {
+	go client.rpc_call(method, args, reply, cb)
+}
+
+func (client *RpcClient) rpc_call(method string, args interface{}, reply interface{}, cb RpcCallback) {
+	call := client.cl.Go(method, args, reply, nil)
+	rspcall := <-call.Done
+	if cb != nil {
+		cb.HandlerReplay(rspcall.Reply, rspcall.Error)
+	}
 }
