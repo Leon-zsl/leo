@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"path"
 	"ini"
-	"time"
 	"runtime/debug"
 
 	"leo/base"
@@ -46,7 +45,6 @@ func (h *EchoHandler) HandleSessionClose(ssn *base.Session) {
 
 type GateService struct {
 	master_port_id int
-	connect bool
 }
 
 func NewGateService() (service *GateService, err error) {
@@ -55,41 +53,36 @@ func NewGateService() (service *GateService, err error) {
 	return
 }
 
-func (srv *GateService) init() error {
-	Root.Acceptor.RegisterAcceptedSessionListener(srv)
+func (service *GateService) init() error {
+	Root.Acceptor.RegisterAcceptedSessionListener(service)
 	return nil
 }
 
-func (srv *GateService) Start() error {
-	srv.connect_master()
+func (service *GateService) Start() error {
+	service.connect_master()
 	return nil
 }
 
-func (srv *GateService) Close() error {
+func (service *GateService) Close() error {
+	service.disconnect_master()
 	return nil
 }
 
-func (srv *GateService) Tick() error {
-	if !srv.connect {
-		time.Sleep(1e9)
-		srv.connect_master()
-	} else {
-		time.Sleep(1e9)
-		srv.disconnect_master()
-	}
+func (service *GateService) Tick() error {
+	//fmt.Println("gate service tick")
 	return nil
 }
 
-func (srv *GateService) Save() error {
+func (service *GateService) Save() error {
 	return nil
 }
 
-func (srv *GateService) HandleAcceptedSession(ssn *base.Session) {
+func (service *GateService) HandleAcceptedSession(ssn *base.Session) {
 	fmt.Println("accept session: ", ssn.Addr())
 	NewEchoHandler(ssn)
 }
 
-func (srv *GateService) connect_master() error {
+func (service *GateService) connect_master() error {
 	fmt.Println("connect master")
 
 	//parse config file
@@ -104,17 +97,14 @@ func (srv *GateService) connect_master() error {
 	pt, _ := conf.Get("master", "port")
 	port_id, _ := strconv.Atoi(id)
 	port, _ := strconv.Atoi(pt)
-	fmt.Println("connect to master:", port_id, ip, port)
 	Root.Port.OpenConnect(port_id, ip, port)
 
-	srv.master_port_id = port_id
-	srv.connect = true
+	service.master_port_id = port_id
 	return nil
 }
 
-func (srv *GateService) disconnect_master() error {
+func (service *GateService) disconnect_master() error {
 	fmt.Println("disconnect_master")
-	Root.Port.CloseConnect(srv.master_port_id)
-	srv.connect = false
+	Root.Port.CloseConnect(service.master_port_id)
 	return nil
 }

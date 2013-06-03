@@ -4,7 +4,6 @@
 package master
 
 type MasterService struct {
-	
 }
 
 func NewMasterService() (service *MasterService, err error) {
@@ -26,6 +25,7 @@ func (service *MasterService) Close() error {
 }
 
 func (service *MasterService) Tick() error {
+	//fmt.Println("world service tick")
 	return nil
 }
 

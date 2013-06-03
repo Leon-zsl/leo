@@ -1,7 +1,7 @@
-/* this is master module
+/* this is stage module
 */
 
-package master
+package account
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 	"leo/base"
 )
 
-type Master struct {
+type Account struct {
 	running bool
 
 	Port *base.Port
@@ -25,58 +25,58 @@ type Master struct {
 }
 
 var (
-	Root *Master = nil
+	Root *Account = nil
 )
 
-func NewMaster() (master *Master, err error) {
+func NewAccount() (account *Account, err error) {
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 	fmt.Println("number if cpu: ", cpu)
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("create master failed!", r, string(debug.Stack()))
-			master = nil
+			fmt.Println("create account failed!", r, string(debug.Stack()))
+			account = nil
 		}
 	}()
 
 	if Root != nil {
-		master = Root
+		account = Root
 		return
 	}
 
-	Root = new(Master)
+	Root = new(Account)
 	err = Root.init()
 	if err != nil {
-		fmt.Println("init master failed", err)
+		fmt.Println("init account failed", err)
 		debug.PrintStack()
 		Root = nil
 		return
 	}
 
-	master = Root
+	account = Root
 	return
 }
 
-func (master *Master) init() error {
+func (account *Account) init() error {
 	//parse config file
 	confile := path.Join(CONF_PATH, CONF_FILE)
 	conf, err := ini.LoadFile(confile)
 	if err != nil {
-		master.close()
+		account.close()
 		return err
 	}
 
 	//init logger
 	file, ok := conf.Get("logger", "config_file")
 	if !ok {
-		master.close()
-		return errors.New("can not find logger/config_file in master config file")
+		account.close()
+		return errors.New("can not find logger/config_file in account config file")
 	}
 	ty, ok := conf.Get("logger", "log_type")
 	if !ok {
-		master.close()
-		return errors.New("can not find logger/log_type in master config file")
+		account.close()
+		return errors.New("can not find logger/log_type in account config file")
 	}
 	v := base.LOG_TYPE_SYS
 	switch ty {
@@ -89,55 +89,55 @@ func (master *Master) init() error {
 	}
 	_, err = base.NewLogger(v, path.Join(CONF_PATH, file))
 	if err != nil {
-		master.close()
+		account.close()
 		return err
 	}
 
 	//init port
 	cid, ok := conf.Get("port_server", "id")
 	if !ok {
-		master.close()
-		return errors.New("can not find port_server/id in master config file")
+		account.close()
+		return errors.New("can not find port_server/id in account config file")
 	}
 	id, err := strconv.Atoi(cid)
 	if err != nil {
-		master.close()
+		account.close()
 		return err
 	}
 	ip, ok := conf.Get("port_server", "ip")
 	if !ok {
-		master.close()
-		return errors.New("can not find port_server/ip in master config file")
+		account.close()
+		return errors.New("can not find port_server/ip in account config file")
 	}
 	pt, ok := conf.Get("port_server", "port")
 	if !ok {
-		master.close()
-		return errors.New("can not find port_server/port in master config file")
+		account.close()
+		return errors.New("can not find port_server/port in account config file")
 	}
 	port, err := strconv.Atoi(pt)
 	if err != nil {
-		master.close()
+		account.close()
 		return err
 	}
 	p, err := base.NewPort(id, ip, port)
 	if err != nil {
-		master.close()
+		account.close()
 		return err
 	}
-	master.Port = p
+	account.Port = p
 
 	//init service
-	sv, err := NewMasterService()
+	sv, err := NewAccountService()
 	if err != nil {
-		master.close()
+		account.close()
 		return err
 	}
-	master.Service = sv
+	account.Service = sv
 
 	return nil
 }
 
-func (master *Master) Run() {
+func (account *Account) Run() {
 	defer func() {
 		if r := recover(); r != nil {
 			if base.LoggerIns != nil {
@@ -147,45 +147,45 @@ func (master *Master) Run() {
 			}
 		}
 		
-		master.close()
+		account.close()
 	}()
 
-	master.start()
+	account.start()
 	c := time.Tick(60 * time.Millisecond)
 	for _ = range c {
-		master.Service.Tick()
-		if !master.running {
+		account.Service.Tick()
+		if !account.running {
 			break
 		}
 	}
-	master.save()
+	account.save()
 }
 
-func (master *Master) Shutdown() {
-	master.running = false
+func (account *Account) Shutdown() {
+	account.running = false
 }
 
-func (master *Master) close() {
-	master.running = false
+func (account *Account) close() {
+	account.running = false
 
-	if master.Port != nil {
-		master.Port.Close()
-		master.Port = nil
+	if account.Port != nil {
+		account.Port.Close()
+		account.Port = nil
 	}
-	if master.Service != nil {
-		master.Service.Close()
-		master.Service = nil
+	if account.Service != nil {
+		account.Service.Close()
+		account.Service = nil
 	}
 
 	Root = nil
 }
 
-func (master *Master) start() {
-	master.running = true
-	master.Port.Start()
-	master.Service.Start()
+func (account *Account) start() {
+	account.running = true
+	account.Port.Start()
+	account.Service.Start()
 }
 
-func (master *Master) save() {
-	master.Service.Save()
+func (account *Account) save() {
+	account.Service.Save()
 }

@@ -4,6 +4,9 @@
 package db
 
 import (
+	"path"
+	"ini"
+	"strconv"
 	"time"
 	"fmt"
 	"leo/base"
@@ -56,36 +59,65 @@ func test_del() {
 	}
 }
 
-type Service struct {
+type DBService struct {
+	master_port_id int
 }
 
-func NewDBService() (service *Service, err error) {
-	service = new(Service)
+func NewDBService() (service *DBService, err error) {
+	service = new(DBService)
 	err = service.init()
 	return
 }
 
-func (service *Service) init() error {
+func (service *DBService) init() error {
 	return nil
 }
 
-func (service *Service) Start() error {
+func (service *DBService) Start() error {
 	return nil
 }
 
-func (service *Service) Close() error {
+func (service *DBService) Close() error {
 	return nil
 }
 
-func (service *Service) Save() error {
+func (service *DBService) Save() error {
 	return nil
 }
 
-func (service *Service) Tick() error {
+func (service *DBService) Tick() error {
+	//fmt.Println("db service tick")
 	test_add()
 	test_get()
 	test_set()
 	test_del()
 	time.Sleep(1e9)
+	return nil
+}
+
+func (service *DBService) connect_master() error {
+	fmt.Println("connect master")
+
+	//parse config file
+	confile := path.Join(CONF_PATH, CONF_FILE)
+	conf, err := ini.LoadFile(confile)
+	if err != nil {
+		return err
+	}
+
+	id, _ := conf.Get("master", "id")
+	ip, _ := conf.Get("master", "ip")
+	pt, _ := conf.Get("master", "port")
+	port_id, _ := strconv.Atoi(id)
+	port, _ := strconv.Atoi(pt)
+	Root.Port.OpenConnect(port_id, ip, port)
+
+	service.master_port_id = port_id
+	return nil
+}
+
+func (service *DBService) disconnect_master() error {
+	fmt.Println("disconnect_master")
+	Root.Port.CloseConnect(service.master_port_id)
 	return nil
 }
