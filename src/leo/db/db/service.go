@@ -61,6 +61,7 @@ func test_del() {
 
 type DBService struct {
 	master_port_id int
+	Clock *base.Clock
 }
 
 func NewDBService() (service *DBService, err error) {
@@ -70,14 +71,17 @@ func NewDBService() (service *DBService, err error) {
 }
 
 func (service *DBService) init() error {
+	service.Clock, _ = base.NewClock()
 	return nil
 }
 
 func (service *DBService) Start() error {
+	service.Clock.Start()
 	return nil
 }
 
 func (service *DBService) Close() error {
+	service.Clock.Close()
 	return nil
 }
 
@@ -86,6 +90,7 @@ func (service *DBService) Save() error {
 }
 
 func (service *DBService) Tick() error {
+	service.Clock.Tick()
 	//fmt.Println("db service tick")
 	test_add()
 	test_get()

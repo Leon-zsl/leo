@@ -8,10 +8,13 @@ import (
 	"path"
 	"ini"
 	"strconv"
+
+	"leo/base"
 )
 
 type AccountService struct {
 	master_port_id int
+	Clock *base.Clock
 }
 
 func NewAccountService() (service *AccountService, err error) {
@@ -21,20 +24,24 @@ func NewAccountService() (service *AccountService, err error) {
 }
 
 func (service *AccountService) init() error {
+	service.Clock, _ = base.NewClock()
 	return nil
 }
 
 func (service *AccountService) Start() error {
+	service.Clock.Start()
 	service.connect_master()
 	return nil
 }
 
 func (service *AccountService) Close() error {
 	service.disconnect_master()
+	service.Clock.Close()
 	return nil
 }
 
 func (service *AccountService) Tick() error {
+	service.Clock.Tick()
 	//fmt.Println("account service tick")
 	return nil
 }

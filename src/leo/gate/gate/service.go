@@ -45,6 +45,7 @@ func (h *EchoHandler) HandleSessionClose(ssn *base.Session) {
 
 type GateService struct {
 	master_port_id int
+	Clock *base.Clock
 }
 
 func NewGateService() (service *GateService, err error) {
@@ -54,21 +55,25 @@ func NewGateService() (service *GateService, err error) {
 }
 
 func (service *GateService) init() error {
+	service.Clock, _ = base.NewClock()
 	Root.Acceptor.RegisterAcceptedSessionListener(service)
 	return nil
 }
 
 func (service *GateService) Start() error {
+	service.Clock.Start()
 	service.connect_master()
 	return nil
 }
 
 func (service *GateService) Close() error {
 	service.disconnect_master()
+	service.Clock.Close()
 	return nil
 }
 
 func (service *GateService) Tick() error {
+	service.Clock.Tick()
 	//fmt.Println("gate service tick")
 	return nil
 }

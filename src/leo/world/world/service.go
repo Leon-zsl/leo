@@ -8,10 +8,13 @@ import (
 	"path"
 	"ini"
 	"strconv"
+
+	"leo/base"
 )
 
 type WorldService struct {
 	master_port_id int
+	Clock *base.Clock
 }
 
 func NewWorldService() (service *WorldService, err error) {
@@ -21,18 +24,22 @@ func NewWorldService() (service *WorldService, err error) {
 }
 
 func (service *WorldService) init() error {
+	service.Clock, _ = base.NewClock()
 	return nil
 }
 
 func (service *WorldService) Start() error {
+	service.Clock.Start()
 	return nil
 }
 
 func (service *WorldService) Close() error {
+	service.Clock.Close()
 	return nil
 }
 
 func (service *WorldService) Tick() error {
+	service.Clock.Tick()
 	//fmt.Println("world service tick")
 	return nil
 }
