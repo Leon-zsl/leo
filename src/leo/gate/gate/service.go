@@ -45,6 +45,7 @@ func (h *EchoHandler) HandleSessionClose(ssn *base.Session) {
 }
 
 type GateService struct {
+	master_port_id int
 	connect bool
 }
 
@@ -72,6 +73,9 @@ func (srv *GateService) Tick() error {
 	if !srv.connect {
 		time.Sleep(1e9)
 		srv.connect_master()
+	} else {
+		time.Sleep(1e9)
+		srv.disconnect_master()
 	}
 	return nil
 }
@@ -86,6 +90,8 @@ func (srv *GateService) HandleAcceptedSession(ssn *base.Session) {
 }
 
 func (srv *GateService) connect_master() error {
+	fmt.Println("connect master")
+
 	//parse config file
 	confile := path.Join(CONF_PATH, CONF_FILE)
 	conf, err := ini.LoadFile(confile)
@@ -101,6 +107,14 @@ func (srv *GateService) connect_master() error {
 	fmt.Println("connect to master:", port_id, ip, port)
 	Root.Port.OpenConnect(port_id, ip, port)
 
+	srv.master_port_id = port_id
 	srv.connect = true
+	return nil
+}
+
+func (srv *GateService) disconnect_master() error {
+	fmt.Println("disconnect_master")
+	Root.Port.CloseConnect(srv.master_port_id)
+	srv.connect = false
 	return nil
 }

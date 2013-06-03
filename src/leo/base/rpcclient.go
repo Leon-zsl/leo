@@ -54,6 +54,14 @@ func (client *RpcClient) Close() {
 	}
 }
 
+func (client *RpcClient) IP() string {
+	return client.ip
+}
+
+func (client *RpcClient) Port() int {
+	return client.port
+}
+
 func (client *RpcClient) Call(method string, args interface{}, reply interface{}) error {
 	return client.cl.Call(method, args, reply)
 }

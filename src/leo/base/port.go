@@ -18,16 +18,16 @@ type Port struct {
 }
 
 type PortData struct {
-	id int
-	ip string
-	port int
+	ID int
+	IP string
+	Port int
 }
 
 type HandShakeService struct {
 	owner *Port
 }
 
-func (service *HandShakeService) Notify(cl *PortData, sv *PortData) error {
+func (service *HandShakeService) Open(cl *PortData, sv *PortData) error {
 	if cl == nil {
 		return errors.New("cl arg is nil")
 	}
@@ -35,20 +35,45 @@ func (service *HandShakeService) Notify(cl *PortData, sv *PortData) error {
 		return errors.New("sv arg is nil")
 	}
 
-	if _, ok := service.owner.clients[cl.id]; ok {
-		sv.id = service.owner.ID()
-		sv.ip = service.owner.Server().IP()
-		sv.port = service.owner.Server().Port()
+	if _, ok := service.owner.clients[cl.ID]; ok {
+		sv.ID = service.owner.ID()
+		sv.IP = service.owner.Server().IP()
+		sv.Port = service.owner.Server().Port()
 		return nil
 	}
 
-	err := service.owner.OpenConnect(cl.id, cl.ip, cl.port)
+	err := service.owner.OpenConnect(cl.ID, cl.IP, cl.Port)
 	if err != nil {
 		return err
 	}
-	sv.id = service.owner.ID()
-	sv.ip = service.owner.Server().IP()
-	sv.port = service.owner.Server().Port()	
+	sv.ID = service.owner.ID()
+	sv.IP = service.owner.Server().IP()
+	sv.Port = service.owner.Server().Port()	
+	return nil
+}
+
+func (service *HandShakeService) Close(cl *PortData, sv *PortData) error {
+	if cl == nil {
+		return errors.New("cl arg is nil")
+	}
+	if sv == nil {
+		return errors.New("sv arg is nil")
+	}
+
+	if _, ok := service.owner.clients[cl.ID]; !ok {
+		sv.ID = service.owner.ID()
+		sv.IP = service.owner.Server().IP()
+		sv.Port = service.owner.Server().Port()
+		return nil
+	}
+
+	err := service.owner.CloseConnect(cl.ID)
+	if err != nil {
+		return err
+	}
+	sv.ID = service.owner.ID()
+	sv.IP = service.owner.Server().IP()
+	sv.Port = service.owner.Server().Port()	
 	return nil
 }
 
@@ -108,7 +133,6 @@ func (port *Port) OpenConnect(port_id int, ip string, pt int) error {
 	if ok {
 		return errors.New("duplicate port id" + strconv.Itoa(port_id))
 	}
-	
 	cl, err := NewRpcClient(ip, pt)
 	if err != nil {
 		return err
@@ -121,16 +145,25 @@ func (port *Port) OpenConnect(port_id int, ip string, pt int) error {
 
 	pd := &PortData{port.id, port.server.IP(), port.server.Port()}
 	ps := new(PortData)
-	err = cl.Call("HandShakeService.Notify", pd, ps)
+	err = cl.Call("HandShakeService.Open", pd, ps)
 	return err
 }
 
-func (port *Port) CloseConnect(port_id int) {
+func (port *Port) CloseConnect(port_id int) error {
 	v, ok := port.clients[port_id]
 	if ok {
-		v.Close()
 		delete(port.clients, port_id)
+
+		pd := &PortData{port.id, port.server.IP(), port.server.Port()}
+		ps := new(PortData)
+		err := v.Call("HandShakeService.Close", pd, ps)
+		if err != nil {
+			LoggerIns.Error("close connect err:", err);
+		}
+
+		v.Close()
 	}
+	return nil
 }
 
 func (port *Port) GetConnect(port_id int) (*RpcClient, bool) {
