@@ -59,7 +59,7 @@ func test_del() {
 type Service struct {
 }
 
-func NewService() (service *Service, err error) {
+func NewDBService() (service *Service, err error) {
 	service = new(Service)
 	err = service.init()
 	return
@@ -69,20 +69,23 @@ func (service *Service) init() error {
 	return nil
 }
 
-func (service *Service) Start() {
+func (service *Service) Start() error {
+	return nil
 }
 
-func (service *Service) Close() {
+func (service *Service) Close() error {
+	return nil
 }
 
-func (service *Service) Tick() {
+func (service *Service) Save() error {
+	return nil
+}
+
+func (service *Service) Tick() error {
 	test_add()
-
 	test_get()
-
 	test_set()
-
 	test_del()
-
 	time.Sleep(1e9)
+	return nil
 }

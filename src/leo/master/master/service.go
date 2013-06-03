@@ -1,32 +1,34 @@
-/* this is service
+/* this is master service
 */
 
 package master
 
-import (
-	"fmt"
-)
-
-type Service struct {
+type MasterService struct {
 	
 }
 
-func NewService() (service *Service, err error) {
-	service = new(Service)
+func NewMasterService() (service *MasterService, err error) {
+	service = new(MasterService)
 	err = service.init()
 	return
 }
 
-func (service *Service) init() error {
+func (service *MasterService) init() error {
 	return nil
 }
 
-func (service *Service) Start() {
+func (service *MasterService) Start() error {
+	return nil
 }
 
-func (service *Service) Close() {
+func (service *MasterService) Close() error {
+	return nil
 }
 
-func (service *Service) Tick() {
-	fmt.Println("master service")
+func (service *MasterService) Tick() error {
+	return nil
+}
+
+func (service *MasterService) Save() error {
+	return nil
 }

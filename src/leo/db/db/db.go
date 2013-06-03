@@ -11,16 +11,17 @@ import (
 	"time"
 	"runtime"
 	"runtime/debug"
+	"strconv"
 
 	"leo/base"
 )
 
 type DB struct {
 	running bool
-	
-	Driver *Driver
 
-	Service *Service
+	Driver *base.Driver
+	Port *base.Port
+	Service base.Service
 }
 
 var (
@@ -92,6 +93,7 @@ func (db *DB) init() error {
 		return err
 	}
 
+	//init db driver
 	db_addr, ok := conf.Get("db", "host")
 	if !ok {
 		db.close()
@@ -121,21 +123,54 @@ func (db *DB) init() error {
 	if cache == "true" {
 		db_cache = true
 	}
-	dr, err := NewDriver(db_addr, db_name, db_account, db_pwd, db_cache)
+	dr, err := base.NewDriver(db_addr, db_name, db_account, db_pwd, db_cache)
 	if err != nil {
 		db.close()
 		return err
 	}
 	db.Driver = dr
 
-	sv, err := NewService()
+	//init port
+	cid, ok := conf.Get("port_server", "id")
+	if !ok {
+		db.close()
+		return errors.New("can not find port_server/id in db config file")
+	}
+	id, err := strconv.Atoi(cid)
+	if err != nil {
+		db.close()
+		return err
+	}
+	ip, ok := conf.Get("port_server", "ip")
+	if !ok {
+		db.close()
+		return errors.New("can not find port_server/ip in db config file")
+	}
+	pt, ok := conf.Get("port_server", "port")
+	if !ok {
+		db.close()
+		return errors.New("can not find port_server/port in db config file")
+	}
+	port, err := strconv.Atoi(pt)
+	if err != nil {
+		db.close()
+		return err
+	}
+	p, err := base.NewPort(id, ip, port)
+	if err != nil {
+		db.close()
+		return err
+	}
+	db.Port = p
+
+	//init service
+	sv, err := NewDBService()
 	if err != nil {
 		db.close()
 		return err
 	}
 	db.Service = sv
 
-	//todo:
 	return nil
 }
 
@@ -152,7 +187,6 @@ func (db *DB) Run() {
 	}()
 
 	db.start()
-
 	c := time.Tick(60 * time.Millisecond)
 	for _ = range c {
 		db.Service.Tick()
@@ -160,6 +194,7 @@ func (db *DB) Run() {
 			break
 		}
 	}
+	db.save()
 }
 
 func (db *DB) Shutdown() {
@@ -167,24 +202,27 @@ func (db *DB) Shutdown() {
 }
 
 func (db *DB) save() {
-	//todo:
+	db.Service.Save()
 }
 
 func (db *DB) start() {
 	db.running = true
 
 	db.Driver.Start()
+	db.Port.Start()
 	db.Service.Start()
-	//todo:
 }
 
 func (db *DB) close() {
 	db.running = false
 
-	//todo:
 	if db.Service != nil {
 		db.Service.Close()
 		db = nil
+	}
+	if db.Port != nil {
+		db.Port.Close()
+		db.Port = nil
 	}
 	if db.Driver != nil {
 		db.Driver.Close()

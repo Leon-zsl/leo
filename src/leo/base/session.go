@@ -61,13 +61,13 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 	return nil
 }
 
-func (ssn *Session) Start() {
+func (ssn *Session) Start() error {
 	ssn.closed = false
 
-	//no handle close the session
+	//no handler, close the session
 	if len(ssn.handlers) == 0 {
 		ssn.Close()
-		return
+		return nil
 	}
 
 	for _, l := range(ssn.handlers) {
@@ -77,13 +77,15 @@ func (ssn *Session) Start() {
 	//go ssn.onmsg()
 	go ssn.onsend()
 	go ssn.onrecv()
+
+	return nil
 }
 
 func (ssn *Session) Closed() bool {
 	return ssn.closed
 }
 
-func (ssn *Session) Close() {
+func (ssn *Session) Close() error {
 	for _, v := range(ssn.handlers) {
 		v.HandleSessionClose(ssn)
 	}
@@ -93,6 +95,8 @@ func (ssn *Session) Close() {
 		ssn.conn = nil
 	}
 	ssn.closed = true
+
+	return nil
 }
 
 func (ssn *Session) Conn() *net.TCPConn {

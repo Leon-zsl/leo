@@ -19,9 +19,8 @@ import (
 type Master struct {
 	running bool
 
-	rpcserver *base.RpcServer
-
-	Service *Service
+	Port *base.Port
+	Service base.Service
 }
 
 var (
@@ -93,31 +92,41 @@ func (master *Master) init() error {
 		return err
 	}
 
-	//init rpc server
-	ip, ok := conf.Get("rpc_server", "ip")
+	//init port
+	cid, ok := conf.Get("port_server", "id")
 	if !ok {
 		master.close()
-		return errors.New("can not find rpc_server/ip in master config file")
+		return errors.New("can not find port_server/id in master config file")
 	}
-	pt, ok := conf.Get("rpc_server", "port")
+	id, err := strconv.Atoi(cid)
+	if err != nil {
+		master.close()
+		return err
+	}
+	ip, ok := conf.Get("port_server", "ip")
 	if !ok {
 		master.close()
-		return errors.New("can not find rpc_server/port in master config file")
+		return errors.New("can not find port_server/ip in master config file")
+	}
+	pt, ok := conf.Get("port_server", "port")
+	if !ok {
+		master.close()
+		return errors.New("can not find port_server/port in master config file")
 	}
 	port, err := strconv.Atoi(pt)
 	if err != nil {
 		master.close()
 		return err
 	}
-	rpcs, err := base.NewRpcServer(ip, port)
+	p, err := base.NewPort(id, ip, port)
 	if err != nil {
 		master.close()
 		return err
 	}
-	master.rpcserver = rpcs
+	master.Port = p
 
 	//init service
-	sv, err := NewService()
+	sv, err := NewMasterService()
 	if err != nil {
 		master.close()
 		return err
@@ -141,7 +150,6 @@ func (master *Master) Run() {
 	}()
 
 	master.start()
-
 	c := time.Tick(60 * time.Millisecond)
 	for _ = range c {
 		master.Service.Tick()
@@ -149,6 +157,7 @@ func (master *Master) Run() {
 			break
 		}
 	}
+	master.save()
 }
 
 func (master *Master) Shutdown() {
@@ -158,9 +167,9 @@ func (master *Master) Shutdown() {
 func (master *Master) close() {
 	master.running = false
 
-	if master.rpcserver != nil {
-		master.rpcserver.Close()
-		master.rpcserver = nil
+	if master.Port != nil {
+		master.Port.Close()
+		master.Port = nil
 	}
 	if master.Service != nil {
 		master.Service.Close()
@@ -172,12 +181,10 @@ func (master *Master) close() {
 
 func (master *Master) start() {
 	master.running = true
-
-	master.rpcserver.Start()
-
+	master.Port.Start()
 	master.Service.Start()
 }
 
 func (master *Master) save() {
-	//todo:
+	master.Service.Save()
 }

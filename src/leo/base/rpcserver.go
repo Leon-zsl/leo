@@ -5,14 +5,18 @@ package base
 
 import (
 	"fmt"
+	"strings"
+	"strconv"
+	"net"
 	"net/rpc"
 	"runtime/debug"
 )
 
 type RpcServer struct {
 	running bool
-	acceptor *Acceptor
-	ssns []*Session
+	addr string
+	listener *net.TCPListener
+	conns []*net.TCPConn
 }
 
 func NewRpcServer(ip string, port int) (server *RpcServer, err error) {
@@ -22,51 +26,106 @@ func NewRpcServer(ip string, port int) (server *RpcServer, err error) {
 }
 
 func (server *RpcServer) init(ip string, port int) error {
-	ac, err := NewAcceptor(ip, port, 1)
-	if err != nil {
-		return err
-	}
-	ac.RegisterAcceptedSessionListener(server)
-	server.acceptor = ac
-
-	server.ssns = make([]*Session, 0)
+	arr := []string{ip, strconv.Itoa(port)}
+	val := strings.Join(arr, ":")
+	server.addr = val
+	server.conns = make([]*net.TCPConn, 0)
 	return nil
 }
 
-func (server *RpcServer) Start() {
-	server.acceptor.Start()
+func (server *RpcServer) Start() error {
+	addr, err := net.ResolveTCPAddr("tcp", server.addr)
+	if err != nil {
+		return err
+	}
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return err
+	}
+	server.listener = l
 	server.running = true
+
+	go server.handle_accept()
+
+	return nil
 }
 
-func (server *RpcServer) Close() {
+func (server *RpcServer) Close() error {
 	server.running = false
 
-	for _, ssn := range server.ssns {
-		ssn.Close()
+	for _, conn := range server.conns {
+		conn.Close()
 	}
-	server.ssns = make([]*Session, 0)
+	server.conns = make([]*net.TCPConn, 0)
 
-	if server.acceptor != nil {
-		server.acceptor.UnRegisterAcceptedSessionListener(server)
-		server.acceptor.Close()
-		server.acceptor = nil
+	if server.listener != nil {
+		server.listener.Close()
+		server.listener = nil
+	}
+
+	return nil
+}
+
+func (server *RpcServer) IP() string {
+	arr := strings.Split(server.addr, ":")
+	if len(arr) > 0 {
+		return arr[0]
+	} else {
+		return ""
 	}
 }
 
-func (server *RpcServer) Register(sv interface{}) error {
+func (server *RpcServer) Port() int {
+	arr := strings.Split(server.addr, ":")
+	if len(arr) >1 {
+		v, err := strconv.Atoi(arr[1])
+		if err != nil {
+			return 0
+		} else {
+			return v
+		}
+	} else {
+		return 0
+	}
+}
+
+func (server *RpcServer) RegisterService(sv interface{}) error {
 	return rpc.Register(sv)
 }
 
-func (server *RpcServer) HandleAcceptedSession(ssn *Session) {
-	if ssn == nil {
-		return
-	}
-	server.ssns = append(server.ssns, ssn)
+func (server *RpcServer) handle_accept() {
+	defer func() {
+		if r := recover(); r != nil {
+			if LoggerIns != nil {
+				LoggerIns.Critical(r, string(debug.Stack()))
+			} else {
+				fmt.Println("handle_accept except", r, string(debug.Stack()))
+			}
+		}
+	}()
 
-	go server.serve_rpc(ssn)
+	for {
+		if !server.running {
+			break
+		}
+
+		conn, err := server.listener.AcceptTCP()
+		if err != nil {
+			if LoggerIns != nil {
+				LoggerIns.Error(err)
+				debug.PrintStack()
+			} else {
+				fmt.Println("accept tcp error:", err.Error())
+			}
+			continue
+		}
+		server.conns = append(server.conns, conn)
+
+		go server.serve_rpc(conn)
+	}
 }
 
-func (server *RpcServer) serve_rpc(ssn *Session) {
+func (server *RpcServer) serve_rpc(conn *net.TCPConn) {
 	defer func() {
 		if !server.running {
 			return
@@ -80,5 +139,5 @@ func (server *RpcServer) serve_rpc(ssn *Session) {
 		}
 	}()
 
-	rpc.ServeConn(ssn.Conn())
+	rpc.ServeConn(conn)
 }

@@ -5,6 +5,10 @@ package gate
 
 import (
 	"fmt"
+	"strconv"
+	"path"
+	"ini"
+	"time"
 	"runtime/debug"
 
 	"leo/base"
@@ -41,9 +45,10 @@ func (h *EchoHandler) HandleSessionClose(ssn *base.Session) {
 }
 
 type GateService struct {
+	connect bool
 }
 
-func NewService() (service *GateService, err error) {
+func NewGateService() (service *GateService, err error) {
 	service = new(GateService)
 	err = service.init()
 	return
@@ -54,19 +59,48 @@ func (srv *GateService) init() error {
 	return nil
 }
 
-func (srv *GateService) Start() {
-	//do nothing
+func (srv *GateService) Start() error {
+	srv.connect_master()
+	return nil
 }
 
-func (srv *GateService) Close() {
-	//do nothing
+func (srv *GateService) Close() error {
+	return nil
 }
 
-func (srv *GateService) Tick() {
-	//do nothing
+func (srv *GateService) Tick() error {
+	if !srv.connect {
+		time.Sleep(1e9)
+		srv.connect_master()
+	}
+	return nil
+}
+
+func (srv *GateService) Save() error {
+	return nil
 }
 
 func (srv *GateService) HandleAcceptedSession(ssn *base.Session) {
 	fmt.Println("accept session: ", ssn.Addr())
 	NewEchoHandler(ssn)
+}
+
+func (srv *GateService) connect_master() error {
+	//parse config file
+	confile := path.Join(CONF_PATH, CONF_FILE)
+	conf, err := ini.LoadFile(confile)
+	if err != nil {
+		return err
+	}
+
+	id, _ := conf.Get("master", "id")
+	ip, _ := conf.Get("master", "ip")
+	pt, _ := conf.Get("master", "port")
+	port_id, _ := strconv.Atoi(id)
+	port, _ := strconv.Atoi(pt)
+	fmt.Println("connect to master:", port_id, ip, port)
+	Root.Port.OpenConnect(port_id, ip, port)
+
+	srv.connect = true
+	return nil
 }

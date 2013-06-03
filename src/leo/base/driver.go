@@ -1,15 +1,13 @@
 /* this is db driver
 */
 
-package db
+package base
 
 import (
 	"strconv"
 	"errors"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-
-	"leo/base"
 )
 
 //goroutine safe
@@ -44,25 +42,24 @@ func (driver *Driver) init(addr, name, account, pwd string, usecache bool) error
 	return nil
 }
 
-func (driver *Driver) Start() {
+func (driver *Driver) Start() error {
 	db, err := sql.Open("mysql", driver.account + ":" + driver.pwd + 
 		"@tcp" + "(" + driver.addr + ")" + 
 		"/" + driver.name + 
 		"?" + "charset=" + "utf8")
 
 	if err != nil {
-		base.LoggerIns.Critical(err)
-		return
+		return err
 	}
 
 	db.SetMaxIdleConns(32)
 	driver.db = db
 	driver.running = true
-
 	driver.cache.Start()
+	return nil
 }
 
-func (driver *Driver) Close() {
+func (driver *Driver) Close() error {
 	driver.running = false
 	if driver.cache != nil {
 		driver.cache.Close()
@@ -72,9 +69,11 @@ func (driver *Driver) Close() {
 		driver.db.Close()
 		driver.db = nil
 	}
+
+	return nil
 }
 
-func (driver *Driver) Get(table string, key int, keyname string) (*base.Record, error){
+func (driver *Driver) Get(table string, key int, keyname string) (*Record, error){
 	if table == "" {
 		return nil, errors.New("table is invalid")
 	}
@@ -93,7 +92,7 @@ func (driver *Driver) Get(table string, key int, keyname string) (*base.Record, 
 	}
 	defer rows.Close()
 
-	rcd, err := base.NewRecord()
+	rcd, err := NewRecord()
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +131,7 @@ func (driver *Driver) Get(table string, key int, keyname string) (*base.Record, 
 	return rcd, nil
 }
 
-func (driver *Driver) Set(table string, key int, keyname string, record *base.Record) error {
+func (driver *Driver) Set(table string, key int, keyname string, record *Record) error {
 	sql := "UPDATE " + table + " SET "
 	idx := 0
 	for _, name := range(record.Names()) {
@@ -158,7 +157,7 @@ func (driver *Driver) Set(table string, key int, keyname string, record *base.Re
 	return nil
 }
 
-func (driver *Driver) Add(table string, key int, keyname string, record *base.Record) error {
+func (driver *Driver) Add(table string, key int, keyname string, record *Record) error {
 	sql := "INSERT INTO " + table + " VALUES " + "("
 	idx := 0
 	for _, _ = range(record.Names()) {

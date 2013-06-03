@@ -46,18 +46,16 @@ func (mgr *Acceptor) init(ip string, port int, count int) error {
 	return nil
 }
 
-func (mgr *Acceptor) Start() {
+func (mgr *Acceptor) Start() error {
 	mgr.running = true
 
 	addr, err := net.ResolveTCPAddr("tcp", mgr.addr)
 	if err != nil {
-		LoggerIns.Critical("acceptor start failed:", err)
-		return
+		return err
 	}
 	listener, err := net.ListenTCP("tcp", addr)
 	if err != nil {
-		LoggerIns.Critical("acceptor start failed:", err)
-		return
+		return err
 	}
 
 // 	file, err := listener.File()
@@ -86,12 +84,37 @@ func (mgr *Acceptor) Start() {
 	for i := 0; i < mgr.listen_count; i++ {
 		go mgr.handle_accept()
 	}
+	return nil
 }
 
-func (mgr *Acceptor) Close() {
+func (mgr *Acceptor) Close() error {
 	mgr.running = false
 	if mgr.listener != nil {
 		mgr.listener.Close()
+	}
+	return nil
+}
+
+func (mgr *Acceptor) IP() string {
+	arr := strings.Split(mgr.addr, ":")
+	if len(arr) > 0 {
+		return arr[0]
+	} else {
+		return ""
+	}
+}
+
+func (mgr *Acceptor) Port() int {
+	arr := strings.Split(mgr.addr, ":")
+	if len(arr) >1 {
+		v, err := strconv.Atoi(arr[1])
+		if err != nil {
+			return 0
+		} else {
+			return v
+		}
+	} else {
+		return 0
 	}
 }
 

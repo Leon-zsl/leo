@@ -32,17 +32,18 @@ func (client *RpcClient) init(ip string, port int) error {
 	return nil
 }
 
-func (client *RpcClient) Start() {
+func (client *RpcClient) Start() error {
 	arr := []string{client.ip, strconv.Itoa(client.port)}
 	addr := strings.Join(arr, ":")
 
 	cl, err := rpc.Dial("tcp", addr)
 	if err != nil {
-		LoggerIns.Error("rpc client start err:", err)
+		return err
 	}
-	client.cl = cl
 
+	client.cl = cl
 	client.running = true
+	return nil
 }
 
 func (client *RpcClient) Close() {

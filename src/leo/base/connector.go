@@ -26,12 +26,12 @@ func (conn *Connector) init() error {
 	return nil
 }
 
-func (conn *Connector) Start() {
-	//do nothing
+func (conn *Connector) Start() error {
+	return nil
 }
 
-func (conn *Connector) Close() {
-	//do nothing
+func (conn *Connector) Close() error {
+	return nil
 }
 
 //the caller need to invoke the sessionmgr.AddSession(ssn) and ssn.Start()

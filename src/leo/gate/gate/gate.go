@@ -19,9 +19,9 @@ type Gate struct {
 	running bool
 
 	Acceptor *base.Acceptor
-	Connector *base.Connector
-
-	Service *GateService
+	//Connector *base.Connector
+	Port *base.Port
+	Service base.Service
 }
 
 var (
@@ -127,15 +127,48 @@ func (gate *Gate) init() error {
 	gate.Acceptor = ac
 
 	//init connector
-	co, err := base.NewConnector()
+// 	co, err := base.NewConnector()
+// 	if err != nil {
+// 		gate.close()
+// 		return err
+// 	}
+// 	gate.Connector = co
+
+	//init port
+	cid, ok := conf.Get("port_server", "id")
+	if !ok {
+		gate.close()
+		return errors.New("can not find port_server/id in gate config file")
+	}
+	id, err := strconv.Atoi(cid)
 	if err != nil {
 		gate.close()
 		return err
 	}
-	gate.Connector = co
+	ip, ok = conf.Get("port_server", "ip")
+	if !ok {
+		gate.close()
+		return errors.New("can not find port_server/ip in gate config file")
+	}
+	pt, ok := conf.Get("port_server", "port")
+	if !ok {
+		gate.close()
+		return errors.New("can not find port_server/port in gate config file")
+	}
+	ptval, err := strconv.Atoi(pt)
+	if err != nil {
+		gate.close()
+		return err
+	}
+	p, err := base.NewPort(id, ip, ptval)
+	if err != nil {
+		gate.close()
+		return err
+	}
+	gate.Port = p
 
 	//init service
-	sv, err := NewService()
+	sv, err := NewGateService()
 	if err != nil {
 		gate.close()
 		return err
@@ -154,12 +187,11 @@ func (gate *Gate) Run() {
 				fmt.Println("run time exception:", r, string(debug.Stack()))
 			}
 		}
-		//gate.save()
+
 		gate.close()
 	}()
 
 	gate.start()
-
 	c := time.Tick(60 * time.Millisecond)
 	for _ = range c {
 		gate.Service.Tick()
@@ -167,16 +199,7 @@ func (gate *Gate) Run() {
 			break
 		}
 	}
-
-// 	for {
-// 		if !gate.running {
-// 			break
-// 		}
-// 		gate.Service.Update()
-
-// 		time.Sleep(1e6 * 30)
-// 		fmt.Printf("%v\n", time.Now())
-// 	}
+	gate.save()
 }
 
 func (gate *Gate) Shutdown() {
@@ -187,8 +210,8 @@ func (gate *Gate) start() {
 	gate.running = true
 
 	gate.Acceptor.Start()
-	gate.Connector.Start()
-
+	//gate.Connector.Start()
+	gate.Port.Start()
 	gate.Service.Start()
 }
 
@@ -200,14 +223,17 @@ func (gate *Gate) close() {
 		gate.Service.Close()
 		gate.Service = nil
 	}
-
 	if gate.Acceptor != nil {
 		gate.Acceptor.Close()
 		gate.Acceptor = nil
 	}
-	if gate.Connector != nil {
-		gate.Connector.Close()
-		gate.Connector = nil
+// 	if gate.Connector != nil {
+// 		gate.Connector.Close()
+// 		gate.Connector = nil
+// 	}
+	if gate.Port != nil {
+		gate.Port.Close()
+		gate.Port = nil
 	}
 	if base.LoggerIns != nil {
 		base.LoggerIns.Close()
@@ -218,5 +244,5 @@ func (gate *Gate) close() {
 }
 
 func (gate *Gate) save() {
-	//todo:
+	gate.Service.Save()
 }

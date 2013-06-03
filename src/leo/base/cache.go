@@ -1,17 +1,16 @@
 /* this is data cache
 */
 
-package db
+package base
 
 import (
 	"sync"
 	"strconv"
-	"leo/base"
 )
 
 //goroutine safe
 type Cache struct {
-	data map[string] *base.Record
+	data map[string] *Record
 	lock sync.RWMutex
 }
 
@@ -22,17 +21,19 @@ func NewCache() (cache *Cache, err error) {
 }
 
 func (cache *Cache) init() error {
-	cache.data = make(map[string] *base.Record)
+	cache.data = make(map[string] *Record)
 	return nil
 }
 
-func (cache *Cache) Start() {
+func (cache *Cache) Start() error {
+	return nil
 }
 
-func (cache *Cache) Close() {
+func (cache *Cache) Close() error {
+	return nil
 }
 
-func (cache *Cache) Get(table string, key int) (*base.Record) {
+func (cache *Cache) Get(table string, key int) (*Record) {
 	k := cache.map_key(table, key)
 	if k == "" {
 		return nil
@@ -48,7 +49,7 @@ func (cache *Cache) Get(table string, key int) (*base.Record) {
 	return v
 }
 
-func (cache *Cache) Set(table string, key int, record *base.Record) {
+func (cache *Cache) Set(table string, key int, record *Record) {
 	k := cache.map_key(table, key)
 	if k == "" {
 		return
@@ -59,7 +60,7 @@ func (cache *Cache) Set(table string, key int, record *base.Record) {
 	cache.lock.Unlock()
 }
 
-func (cache *Cache) Add(table string, key int, record *base.Record) {
+func (cache *Cache) Add(table string, key int, record *Record) {
 	k := cache.map_key(table, key)
 	if k == "" {
 		return
