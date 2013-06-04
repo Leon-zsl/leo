@@ -19,14 +19,21 @@ func (mgr *RoomMgr) init() error {
 }
 
 func (mgr *RoomMgr) Start() error {
+	//do nothing now
 	return nil
 }
 
 func (mgr *RoomMgr) Close() error {
+	for _, room := range(mgr.room_map) {
+		room.Close()
+	}
+	mgr.room_map = make(map[string]*Room)
 	return nil
 }
 
 func (mgr *RoomMgr) Tick() error {
+	//do nothing now. 
+	//one room one goroutine
 	return nil
 }
 
