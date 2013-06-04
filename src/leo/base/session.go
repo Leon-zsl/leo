@@ -30,8 +30,8 @@ type Session struct {
 
 	conn *net.TCPConn
 
-//	recvq *RingBuffer
-	sendq *RingBuffer
+//	recvq *Queue
+	sendq *Queue
 
 	handlers []SessionHandler
 }
@@ -48,8 +48,8 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 
 	ssn.handlers = make([]SessionHandler, 0)
 
-	ssn.sendq = NewRingBuffer()
-//	ssn.recvq = NewRingBuffer()
+	ssn.sendq = NewQueue()
+//	ssn.recvq = NewQueue()
 
 	conn.SetReadBuffer(2048)
 	//	conn.SetNoDelay(true)
@@ -274,11 +274,12 @@ func (ssn *Session) onsend() {
 
 		sendbuf := make([]byte, 0)
 		for {
-			pkt := ssn.sendq.Pop()
-			if pkt == nil {
+			pv := ssn.sendq.Pop()
+			if pv == nil {
 				break
 			}
 
+			pkt := pv.(*Packet)
 			buffer, err := pkt.Bytes()
 			if err != nil {
 				ssn.handle_send_err(err)

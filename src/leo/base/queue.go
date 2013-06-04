@@ -1,66 +1,61 @@
-/* this is queue data structure
+/* this is a simple queue
 */
 
 package base
 
+import (
+	"sync"
+)
+
 type Queue struct {
-	nodes []interface{}
-	head int
-	tail int
-	count int
+	lock sync.Mutex
+	rb *RingBuffer
 }
 
-func NewQueue(size int) *Queue {
-	if size <= 0 {
-		size = 8
-	}
-
-	q := new(Queue)
-	q.head = 0
-	q.tail = 0
-	q.count = 0
-	q.nodes = make([]interface{}, size)
-	return q
+func NewQueue() (q *Queue) {
+	q = new(Queue)
+	q.rb = NewRingBuffer(0)
+	return
 }
 
 func (q *Queue) Push(v interface{}) {
-	if q.count > 0 && q.head == q.tail {
-		ns := make([]interface{}, len(q.nodes) * 2)
-		copy(ns, q.nodes[q.head:])
-		copy(ns[len(q.nodes) - q.head:], q.nodes[:q.head])
-		q.head = 0
-		q.tail = q.count
-		q.nodes = ns
-	}
-
-	q.nodes[q.tail] = v
-	q.tail = (q.tail + 1) % len(q.nodes)
-	q.count++
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	q.rb.Push(v)
 }
 
 func (q *Queue) Pop() interface{} {
-	if q.count == 0 {
+	q.lock.Lock()
+	q.lock.Unlock()
+	v := q.rb.Pop()
+
+	if v != nil {
+		return v
+	} else {
 		return nil
 	}
-
-	n := q.nodes[q.head]
-	q.head = (q.head + 1) % len(q.nodes)
-	q.count--
-	return n
-}
-
-func (q *Queue) Peek() interface{} {
-	if q.count == 0 {
-		return nil
-	}	
-	return q.nodes[q.head]
 }
 
 func (q *Queue) Count() int {
-	return q.count
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	return q.rb.Count()
 }
 
 func (q *Queue) Empty() bool {
-	return q.count == 0
+	q.lock.Lock()
+	defer q.lock.Unlock()
+	return q.rb.Empty()
 }
 
+func (q *Queue) Peek() interface{} {
+	q.lock.Lock()
+	q.lock.Unlock()
+	v := q.rb.Peek()
+
+	if v != nil {
+		return v
+	} else {
+		return nil
+	}
+}

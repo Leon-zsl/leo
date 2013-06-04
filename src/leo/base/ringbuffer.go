@@ -1,61 +1,66 @@
-/* this is a simple ring buffer
+/* this is ring buffer data structure
 */
 
 package base
 
-import (
-	"sync"
-)
-
 type RingBuffer struct {
-	lock sync.Mutex
-	queue *Queue
+	nodes []interface{}
+	head int
+	tail int
+	count int
 }
 
-func NewRingBuffer() (rb *RingBuffer) {
-	rb = new(RingBuffer)
-	rb.queue = NewQueue(0)
-	return
+func NewRingBuffer(size int) *RingBuffer {
+	if size <= 0 {
+		size = 8
+	}
+
+	rb := new(RingBuffer)
+	rb.head = 0
+	rb.tail = 0
+	rb.count = 0
+	rb.nodes = make([]interface{}, size)
+	return rb
 }
 
-func (rb *RingBuffer) Push(pk *Packet) {
-	rb.lock.Lock()
-	defer rb.lock.Unlock()
-	rb.queue.Push(pk)
+func (rb *RingBuffer) Push(v interface{}) {
+	if rb.count > 0 && rb.head == rb.tail {
+		ns := make([]interface{}, len(rb.nodes) * 2)
+		copy(ns, rb.nodes[rb.head:])
+		copy(ns[len(rb.nodes) - rb.head:], rb.nodes[:rb.head])
+		rb.head = 0
+		rb.tail = rb.count
+		rb.nodes = ns
+	}
+
+	rb.nodes[rb.tail] = v
+	rb.tail = (rb.tail + 1) % len(rb.nodes)
+	rb.count++
 }
 
-func (rb *RingBuffer) Pop() *Packet {
-	rb.lock.Lock()
-	rb.lock.Unlock()
-	v := rb.queue.Pop()
-
-	if v != nil {
-		return v.(*Packet)
-	} else {
+func (rb *RingBuffer) Pop() interface{} {
+	if rb.count == 0 {
 		return nil
 	}
+
+	n := rb.nodes[rb.head]
+	rb.head = (rb.head + 1) % len(rb.nodes)
+	rb.count--
+	return n
+}
+
+func (rb *RingBuffer) Peek() interface{} {
+	if rb.count == 0 {
+		return nil
+	}	
+	return rb.nodes[rb.head]
 }
 
 func (rb *RingBuffer) Count() int {
-	rb.lock.Lock()
-	defer rb.lock.Unlock()
-	return rb.queue.Count()
+	return rb.count
 }
 
 func (rb *RingBuffer) Empty() bool {
-	rb.lock.Lock()
-	defer rb.lock.Unlock()
-	return rb.queue.Empty()
+	return rb.count == 0
 }
 
-func (rb *RingBuffer) Peek() *Packet {
-	rb.lock.Lock()
-	rb.lock.Unlock()
-	v := rb.queue.Peek()
-
-	if v != nil {
-		return v.(*Packet)
-	} else {
-		return nil
-	}
-}

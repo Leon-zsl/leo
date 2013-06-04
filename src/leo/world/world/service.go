@@ -15,6 +15,8 @@ import (
 type WorldService struct {
 	master_port_id int
 	Clock *base.Clock
+
+	RoomMgr *RoomMgr
 }
 
 func NewWorldService() (service *WorldService, err error) {
@@ -25,21 +27,27 @@ func NewWorldService() (service *WorldService, err error) {
 
 func (service *WorldService) init() error {
 	service.Clock, _ = base.NewClock()
+	service.RoomMgr, _ = NewRoomMgr()
 	return nil
 }
 
 func (service *WorldService) Start() error {
+	service.connect_master()
 	service.Clock.Start()
+	service.RoomMgr.Start()
 	return nil
 }
 
 func (service *WorldService) Close() error {
+	service.RoomMgr.Close()
 	service.Clock.Close()
+	service.disconnect_master()
 	return nil
 }
 
 func (service *WorldService) Tick() error {
 	service.Clock.Tick()
+	service.RoomMgr.Tick()
 	//fmt.Println("world service tick")
 	return nil
 }
