@@ -6,12 +6,53 @@ option optimize_for = SPEED;
 
 message CreateRoom {
     //id = 1 << 17 + 1
+    //server = world
     optional string guid = 1;
     optional string name = 2;
     optional int32 maxSpace = 3;
 }
 
-message JoinRoom {
+message CreateRoomResp {
     //id = 1 << 17 + 2
+    optional int32 errorCode = 1;
+}
+
+message JoinRoom {
+    //id = 1 << 17 + 3
+    //server = world
     optional string guid = 4;
+}
+
+message JoinRoomResp {
+    //id = 1 << 17 + 4
+    optional int32 errorCode = 1;
+}
+
+message RoomInfo {
+    //id = 1 << 17 + 5
+    //server = master
+    optional string guid = 1;
+}
+
+message RoomInfoResp {
+    //id = 1 << 17 + 6
+    optional string guid = 1;
+    repeated string playerList = 2;
+}
+
+message RoomList {
+    //id = 1 << 17 + 7
+    //server = master
+    //optional string guid = 1;
+}
+
+message RoomListResp {
+    //id = 1 << 17 + 8
+    optional int32 errorCode = 1;
+    message Info {
+        repeated string name = 1;
+        repeated int32 maxSpcae = 2;
+        repeated int32 retainSpace = 3;
+    }
+    repeated Info roomList = 2;
 }

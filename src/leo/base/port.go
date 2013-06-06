@@ -7,13 +7,17 @@ import (
 //	"fmt"
 	"errors"
 	"strconv"
+	"sync"
 )
 
+//safe for goroutine
 type Port struct {
 	running bool
 
 	id int
 	server *RpcServer
+
+	lock sync.RWMutex
 	clients map[int] *RpcClient
 }
 
@@ -141,7 +145,9 @@ func (port *Port) OpenConnect(port_id int, ip string, pt int) error {
 	if err != nil {
 		return err
 	}
+	port.lock.Lock()
 	port.clients[port_id] = cl
+	port.lock.Unlock()
 
 	pd := &PortData{port.id, port.server.IP(), port.server.Port()}
 	ps := new(PortData)
@@ -152,7 +158,9 @@ func (port *Port) OpenConnect(port_id int, ip string, pt int) error {
 func (port *Port) CloseConnect(port_id int) error {
 	v, ok := port.clients[port_id]
 	if ok {
+		port.lock.Lock()
 		delete(port.clients, port_id)
+		port.lock.Unlock()
 
 		pd := &PortData{port.id, port.server.IP(), port.server.Port()}
 		ps := new(PortData)
@@ -167,12 +175,14 @@ func (port *Port) CloseConnect(port_id int) error {
 }
 
 func (port *Port) GetConnect(port_id int) (*RpcClient, bool) {
+	port.lock.RLock()
 	cl, ok := port.clients[port_id]
+	port.lock.RUnlock()
 	return cl, ok
 }
 
 func (port *Port) Call(port_id int, method string, args interface{}, reply interface{}) error {
-	cl, ok := port.clients[port_id]
+	cl, ok := port.GetConnect(port_id)
 	if !ok {
 		return errors.New("target port do not exists " + strconv.Itoa(port_id))
 	}
@@ -180,10 +190,19 @@ func (port *Port) Call(port_id int, method string, args interface{}, reply inter
 }
 
 func (port *Port) CallAsync(port_id int, method string, args interface{}, reply interface{}, cb RpcCallback) error {
-	cl, ok := port.clients[port_id]
+	cl, ok := port.GetConnect(port_id)
 	if !ok {
 		return errors.New("target port do not exists " + strconv.Itoa(port_id))
 	}
 	cl.CallAsync(method, args, reply, cb)
+	return nil
+}
+
+func (port *Port) SendAsync(port_id int, method string, args interface{}) error {
+	cl, ok := port.GetConnect(port_id)
+	if !ok {
+		return errors.New("target port do not exists " + strconv.Itoa(port_id))
+	}
+	cl.CallAsync(method, args, nil, nil)
 	return nil
 }

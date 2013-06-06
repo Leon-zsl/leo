@@ -15,6 +15,7 @@ type AcceptedSessionListener interface {
 	HandleAcceptedSession(ssn *Session)
 }
 
+//goroutine safe if register before start
 type Acceptor struct {
 	running bool
 	addr string

@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"encoding/binary"
 )
+
+//safe for goroutine
 type Packet struct {
 	op int32
 	args []byte

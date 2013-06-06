@@ -9,6 +9,7 @@ import (
 	"strconv"
 )
 
+//goroutine safe
 type Connector struct {
 	//todo
 }

@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+//safe for goroutine
 type Queue struct {
 	lock sync.Mutex
 	rb *RingBuffer

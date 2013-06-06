@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+//use this in one goroutine
 type Clock struct {
 	running bool
 

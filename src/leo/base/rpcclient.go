@@ -9,6 +9,7 @@ import (
 	"net/rpc"
 )
 
+//safe for goroutine
 type RpcCallback interface {
 	HandlerReplay(reply interface{}, err error)
 }
@@ -79,5 +80,7 @@ func (client *RpcClient) rpc_call(method string, args interface{}, reply interfa
 	rspcall := <-call.Done
 	if cb != nil {
 		cb.HandlerReplay(rspcall.Reply, rspcall.Error)
+	} else {
+		LoggerIns.Error("rpc async error", rspcall.Error)
 	}
 }

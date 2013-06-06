@@ -2,7 +2,8 @@ TARG=.
 
 GOFILES=\
 	account.pb.go\
-	world.pb.go
+	world.pb.go\
+	module.pb.go
 
 all: build
 

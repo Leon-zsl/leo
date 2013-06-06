@@ -167,6 +167,13 @@ func (gate *Gate) init() error {
 	}
 	gate.Port = p
 
+	//rpc service
+	err = BuildRpcService(p)
+	if err != nil {
+		gate.close()
+		return err
+	}
+
 	//init service
 	sv, err := NewGateService()
 	if err != nil {

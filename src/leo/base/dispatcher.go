@@ -8,6 +8,7 @@ import (
 	"container/list"
 )
 
+//goroutine safe
 type Dispatcher struct {
 	lock_e sync.Mutex
 	event_list *list.List

@@ -22,6 +22,7 @@ type SessionHandler interface {
 	HandleSessionError(ssn *Session, err error)
 }
 
+//safe for goroutine
 type Session struct {
 	closed bool
 

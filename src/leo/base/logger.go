@@ -10,6 +10,7 @@ import (
 	"log4go"
 )
 
+//safe for goroutine
 type Logger struct {
 	lgtype int
 	logger4go log4go.Logger

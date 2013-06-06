@@ -12,10 +12,12 @@ import (
 	"runtime/debug"
 )
 
+//safe for goroutine
 type RpcServer struct {
 	running bool
 	addr string
 	listener *net.TCPListener
+
 	conns []*net.TCPConn
 }
 
