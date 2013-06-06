@@ -1,0 +1,18 @@
+/*account protocol*/
+
+package proto;
+
+option optimize_for = SPEED;
+
+message Register {
+    //id = 1 << 16 + 1
+    required string name = 1;
+    required string pwd = 2;
+    optional string verifyCode = 3;
+}
+
+message Login {
+    //id = 1 << 16 + 2
+    required string name = 1;
+    required string pwd = 2;
+}
