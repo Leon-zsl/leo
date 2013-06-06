@@ -6,6 +6,11 @@ import (
 	"leo/base"
 )
 
+type RpcClientRequest struct {
+	Sid string
+	Pkt *base.Packet
+}
+
 type RpcSendTo struct {
 	Sid string
 	Pkt *base.Packet

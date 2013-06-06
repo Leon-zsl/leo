@@ -8,6 +8,7 @@ import (
 
 	"leo/base"
 	"leo/proto"
+	"leo/common"
 )
 
 type Router struct {
@@ -45,15 +46,13 @@ func (router *Router) HandleSessionStart(ssn *base.Session) {
 }
 
 func (router *Router) HandleSessionMsg(ssn *base.Session, pkt *base.Packet) {
-// 	fmt.Println(pkt.Op(), string(pkt.Args()))
-// 	ssn.Send(pkt)
-
 	target := proto.RouteMap[int(pkt.Op())]
+	req := &common.RpcClientRequest{ssn.SID(), pkt}
 	switch target {
 	case "master":
-		Root.Port.SendAsync(ServiceIns.MasterServer(),"ClientReqService.Request", pkt)
+		Root.Port.SendAsync(ServiceIns.MasterServer(),"ClientReqService.Request", req)
 	case "account":
-		Root.Port.SendAsync(ServiceIns.AccountServer(),"ClientReqService.Request", pkt)
+		Root.Port.SendAsync(ServiceIns.AccountServer(),"ClientReqService.Request", req)
 	case "world":
 		Root.Port.SendAsync(router.world_port_id, "ClientReqService.Request", pkt)
 	default:

@@ -126,6 +126,13 @@ func (account *Account) init() error {
 	}
 	account.Port = p
 
+	//rpc service
+	err = BuildRpcService(p)
+	if err != nil {
+		account.close()
+		return err
+	}
+
 	//init service
 	sv, err := NewAccountService()
 	if err != nil {

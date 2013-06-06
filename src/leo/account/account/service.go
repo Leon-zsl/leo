@@ -14,12 +14,22 @@ import (
 
 type AccountService struct {
 	master_port_id int
+	gate_port_id int
 	Clock *base.Clock
 }
 
+var (
+	AccountServiceIns *AccountService = nil
+)
+
 func NewAccountService() (service *AccountService, err error) {
-	service = new(AccountService)
-	err = service.init()
+	if AccountServiceIns != nil {
+		service = AccountServiceIns
+		err = nil
+	} else {
+		service = new(AccountService)
+		err = service.init()
+	}
 	return
 }
 
@@ -30,7 +40,14 @@ func (service *AccountService) init() error {
 
 func (service *AccountService) Start() error {
 	service.Clock.Start()
-	service.connect_master()
+	err := service.connect_master()
+	if err != nil {
+		return err
+	}
+	err = service.get_gate()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -48,6 +65,14 @@ func (service *AccountService) Tick() error {
 
 func (service *AccountService) Save() error {
 	return nil
+}
+
+func (service *AccountService) MasterServer() int {
+	return service.master_port_id
+}
+
+func (service *AccountService) GateServer() int {
+	return service.gate_port_id
 }
 
 func (service *AccountService) connect_master() error {
@@ -74,5 +99,19 @@ func (service *AccountService) connect_master() error {
 func (service *AccountService) disconnect_master() error {
 	fmt.Println("disconnect_master")
 	Root.Port.CloseConnect(service.master_port_id)
+	return nil
+}
+
+func (service *AccountService) get_gate() error {
+	//parse config file
+	confile := path.Join(CONF_PATH, CONF_FILE)
+	conf, err := ini.LoadFile(confile)
+	if err != nil {
+		return err
+	}
+
+	id, _ := conf.Get("gate", "id")
+	port_id, _ := strconv.Atoi(id)
+	service.gate_port_id = port_id
 	return nil
 }

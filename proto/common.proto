@@ -1,0 +1,11 @@
+/* this is common proto */
+
+package proto;
+
+option optimize_for = SPEED;
+
+message Error {
+    //id = 1
+    optional int32 errorCode = 1;
+    optional string errorMsg = 2;
+}

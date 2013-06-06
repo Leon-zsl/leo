@@ -1,6 +1,7 @@
 TARG=.
 
 GOFILES=\
+	common.pb.go\
 	account.pb.go\
 	world.pb.go\
 	module.pb.go
