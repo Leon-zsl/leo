@@ -1,6 +1,7 @@
 bin
 pkg
 log
+src/leo/proto/*.go
 *.pb.go
 *~
 *#

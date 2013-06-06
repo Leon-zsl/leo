@@ -1,4 +1,4 @@
-TARG=../src/leo/proto
+TARG=.
 
 GOFILES=\
 	account.pb.go\
