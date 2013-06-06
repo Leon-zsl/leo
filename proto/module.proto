@@ -1,0 +1,12 @@
+/* this is global msg */
+
+package proto;
+
+option optimize_for = SPEED;
+
+message Chat {
+    //id = 1 << 18 + 1
+    //server = master
+    optional string guid = 1;
+    optional string msg = 2;
+}
