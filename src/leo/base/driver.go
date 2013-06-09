@@ -73,6 +73,10 @@ func (driver *Driver) Close() error {
 	return nil
 }
 
+func (driver *Driver) DB() *sql.DB {
+	return driver.db
+}
+
 func (driver *Driver) Get(table string, key int, keyname string) (*Record, error){
 	if table == "" {
 		return nil, errors.New("table is invalid")
@@ -134,9 +138,9 @@ func (driver *Driver) Get(table string, key int, keyname string) (*Record, error
 func (driver *Driver) Set(table string, key int, keyname string, record *Record) error {
 	sql := "UPDATE " + table + " SET "
 	idx := 0
-	for _, name := range(record.Names()) {
+	for _, name := range(record.Names) {
 		comma := ","
-		if idx == len(record.Names()) - 1 {
+		if idx == len(record.Names) - 1 {
 			comma = ""
 		}
 
@@ -145,7 +149,7 @@ func (driver *Driver) Set(table string, key int, keyname string, record *Record)
 	}
 	
 	sql += " WHERE " + keyname + "=" + strconv.Itoa(key)
-	_, err := driver.db.Exec(sql, record.Values()...) //t
+	_, err := driver.db.Exec(sql, record.Values...)
 	if err != nil {
 		return err
 	}
@@ -160,9 +164,9 @@ func (driver *Driver) Set(table string, key int, keyname string, record *Record)
 func (driver *Driver) Add(table string, key int, keyname string, record *Record) error {
 	sql := "INSERT INTO " + table + " VALUES " + "("
 	idx := 0
-	for _, _ = range(record.Names()) {
+	for _, _ = range(record.Names) {
 		comma := ","
-		if idx == len(record.Names()) - 1 {
+		if idx == len(record.Names) - 1 {
 			comma = ""
 		}
 
@@ -171,7 +175,7 @@ func (driver *Driver) Add(table string, key int, keyname string, record *Record)
 	}
 	sql += ")"
 
-	_, err := driver.db.Exec(sql, record.Values()...)
+	_, err := driver.db.Exec(sql, record.Values...)
 	if err != nil {
 		return err
 	}
@@ -195,4 +199,55 @@ func (driver *Driver) Del(table string, key int, keyname string) error {
 	}
 
 	return nil
+}
+
+func (driver *Driver) Query(sql string, args []interface{}) ([]*Record, error) {
+	rows, err := driver.db.Query(sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	rcds := make([]*Record, 0)
+	names, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
+
+		rcd, _ := NewRecord()
+		val_addrs := make([]interface{}, len(names))
+		for i, _ := range(names) {
+			var v interface{} = nil
+			val_addrs[i] = &v
+		}
+		err = rows.Scan(val_addrs...)
+		if err != nil {
+			return nil, err
+		}
+
+		for i, v := range(val_addrs) {
+			rcd.SetValue(names[i], *(v.(*interface{})))
+		}
+
+		rcds = append(rcds, rcd)
+	}
+
+	return rcds, nil
+}
+
+func (driver *Driver) Count(table string) int {
+	rows, err := driver.db.Query("select * from " + table)
+	if err != nil {
+		return 0
+	}
+
+	count := 0
+	for rows.Next() {
+		count++
+	}
+	return count
 }

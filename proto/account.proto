@@ -12,9 +12,21 @@ message Register {
     optional string verifyCode = 3;
 }
 
-message Login {
+message RegisterResp {
     //id = 1 << 16 + 2
+    optional int32 errorCode = 1;
+    optional string errorMsg = 2;
+}
+
+message Login {
+    //id = 1 << 16 + 3
     //server = account
     required string name = 1;
     required string pwd = 2;
+}
+
+message LoginResp {
+    //id = 1 << 16 + 4
+    optional int32 errorCode = 1;
+    optional string errorMsg = 2;
 }

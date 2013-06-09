@@ -1,16 +1,17 @@
 /* this is rpc fact */
 
-package account
+package db
 
 import (
 	"leo/base"
 )
 
 func BuildRpcService(port *base.Port) error {
-	_, err := NewClientReqDispatcher(port)
+	sv, err := NewRpcService()
 	if err != nil {
 		return err
 	}
+	port.RegisterService(sv)
 
 	//todo:
 

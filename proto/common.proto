@@ -6,6 +6,7 @@ option optimize_for = SPEED;
 
 message Error {
     //id = 1
-    optional int32 errorCode = 1;
-    optional string errorMsg = 2;
+    required int32 op = 1;
+    optional int32 errorCode = 2;
+    optional string errorMsg = 3;
 }

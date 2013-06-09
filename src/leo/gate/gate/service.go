@@ -52,10 +52,12 @@ func (service *GateService) init() error {
 func (service *GateService) Start() error {
 	service.Clock.Start()
 	service.connect_master()
+	service.connect_account()
 	return nil
 }
 
 func (service *GateService) Close() error {
+	service.disconnect_account()
 	service.disconnect_master()
 	Root.Acceptor.UnRegisterAcceptedSessionListener(service.RouterMgr)
 	service.RouterMgr.Close()

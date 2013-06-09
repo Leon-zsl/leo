@@ -3,22 +3,23 @@
 package base
 
 import (
+	"strconv"
 )
 
 type LeoError struct {
-	code string
+	code int
 	msg string
 }
 
-func NewLeoError(errcode, errmsg string) LeoError {
+func NewLeoError(errcode int, errmsg string) LeoError {
 	return LeoError{code:errcode, msg:errmsg}
 }
 
 func (err LeoError) Error() string {
-	return "[code]" + err.code + "[msg]" + err.msg
+	return "[code]" + strconv.Itoa(err.code) + "[msg]" + err.msg
 }
 
-func (err LeoError) Code() string {
+func (err LeoError) Code() int {
 	return err.code
 }
 

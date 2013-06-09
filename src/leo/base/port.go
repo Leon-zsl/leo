@@ -203,6 +203,7 @@ func (port *Port) SendAsync(port_id int, method string, args interface{}) error 
 	if !ok {
 		return errors.New("target port do not exists " + strconv.Itoa(port_id))
 	}
-	cl.CallAsync(method, args, nil, nil)
+	var v int = 0
+	cl.CallAsync(method, args, &v, nil)
 	return nil
 }

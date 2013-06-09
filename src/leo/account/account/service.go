@@ -30,6 +30,7 @@ func NewAccountService() (service *AccountService, err error) {
 	} else {
 		service = new(AccountService)
 		err = service.init()
+		AccountServiceIns = service
 	}
 	return
 }

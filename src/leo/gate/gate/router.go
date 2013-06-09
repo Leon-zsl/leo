@@ -2,8 +2,11 @@
 
 package gate
 
+import pblib "code.google.com/p/goprotobuf/proto"
 import (
-	//"fmt"
+	"fmt"
+	"io"
+	"errors"
 	"runtime/debug"
 
 	"leo/base"
@@ -46,21 +49,37 @@ func (router *Router) HandleSessionStart(ssn *base.Session) {
 }
 
 func (router *Router) HandleSessionMsg(ssn *base.Session, pkt *base.Packet) {
-	target := proto.RouteMap[int(pkt.Op())]
+	target, ok := proto.RouteMap[int(pkt.Op)]
+	if !ok {
+		router.send_err_resp(ssn, pkt.Op, proto.EC_UNKNOWN_OP, "")
+		return
+	}
+
 	req := &common.RpcClientRequest{ssn.SID(), pkt}
+	var err error = nil
 	switch target {
 	case "master":
-		Root.Port.SendAsync(ServiceIns.MasterServer(),"ClientReqService.Request", req)
+		err = Root.Port.SendAsync(ServiceIns.MasterServer(),"ClientReqService.Request", req)
 	case "account":
-		Root.Port.SendAsync(ServiceIns.AccountServer(),"ClientReqService.Request", req)
+		err = Root.Port.SendAsync(ServiceIns.AccountServer(),"ClientReqService.Request", req)
 	case "world":
-		Root.Port.SendAsync(router.world_port_id, "ClientReqService.Request", pkt)
+		err = Root.Port.SendAsync(router.world_port_id, "ClientReqService.Request", req)
 	default:
-		base.LoggerIns.Error("target server is nil", pkt.Op())
+		err = errors.New("unknown target service")
+	}
+	
+	if err != nil {
+		base.LoggerIns.Error("router err", pkt.Op, err.Error())
+		router.send_err_resp(ssn, pkt.Op, proto.EC_UNKNOWN_OP, err.Error())
 	}
 }
 
 func (router *Router) HandleSessionError(ssn *base.Session, err error) {
+	//means the remote close the sock
+	if err == io.EOF {
+		fmt.Println("the remote close the sock")
+		return
+	}
 	base.LoggerIns.Error("session error:", ssn.SID(), ssn.Addr(), err)
 	debug.PrintStack()
 }
@@ -68,4 +87,11 @@ func (router *Router) HandleSessionError(ssn *base.Session, err error) {
 func (router *Router) HandleSessionClose(ssn *base.Session) {
 	base.LoggerIns.Info("session close:", ssn.SID(), ssn.Addr())
 	router.mgr.DelRouter(ssn.SID())
+}
+
+func (router *Router) send_err_resp(ssn *base.Session, op int32, code int32, msg string) {
+	pb := &proto.Error{ Op : pblib.Int32(op), ErrorCode : pblib.Int32(code), ErrorMsg : pblib.String(msg)}
+	val, _ := pblib.Marshal(pb)
+	pkt := base.NewPacket(proto.ERROR, val)
+	ssn.Send(pkt)
 }

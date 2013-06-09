@@ -163,6 +163,13 @@ func (db *DB) init() error {
 	}
 	db.Port = p
 
+	//init rpc service
+	err = BuildRpcService(p)
+	if err != nil {
+		db.close()
+		return err
+	}
+
 	//init service
 	sv, err := NewDBService()
 	if err != nil {

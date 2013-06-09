@@ -11,25 +11,35 @@ import (
 )
 
 type ClientReqService struct {
-	handler_map map[int] ClientReqHandler
+	owner *ClientReqDispatcher
 }
 
-func NewClientReqService() (sv *ClientReqService, err error) {
-	sv = new(ClientReqService)
-	err = sv.init()
+type ClientReqDispatcher struct {
+	handlermap map[int] ClientReqHandler
+	service *ClientReqService
+}
+
+func NewClientReqDispatcher(port *base.Port) (sv *ClientReqDispatcher, err error) {
+	sv = new(ClientReqDispatcher)
+	err = sv.init(port)
 	return
 }
 
-func (sv *ClientReqService) init() error {
-	sv.handler_map = make(map[int] ClientReqHandler)
-	sv.Register(proto.REGISTER, new(RegisterHandler))
-	sv.Register(proto.LOGIN, new(LoginHandler))
+func (d *ClientReqDispatcher) init(port *base.Port) error {
+	d.handlermap = make(map[int] ClientReqHandler)
+	d.Register(proto.REGISTER, new(RegisterHandler))
+	d.Register(proto.LOGIN, new(LoginHandler))
+
+	d.service = new(ClientReqService)
+	d.service.owner = d
+	port.RegisterService(d.service)
 	return nil
 }
 
-func (sv *ClientReqService) Request(reply *common.RpcClientRequest, v interface{}) error {
-	op := int(reply.Pkt.Op())
-	h, ok := sv.handler_map[op]
+func (sv *ClientReqService) Request(reply *common.RpcClientRequest, v *int) error {
+	*v = 0
+	op := int(reply.Pkt.Op)
+	h, ok := sv.owner.handlermap[op]
 	if !ok {
 		pb := &proto.Error{ ErrorCode : pblib.Int32(proto.EC_UNKNOWN_OP), 
 			ErrorMsg : pblib.String("")}
@@ -41,13 +51,17 @@ func (sv *ClientReqService) Request(reply *common.RpcClientRequest, v interface{
 		pkt := base.NewPacket(proto.ERROR, val)
 		resp := &common.RpcSendTo{reply.Sid, pkt}
 		Root.Port.SendAsync(AccountServiceIns.GateServer(), "RpcService.SendTo", resp)
+		return nil
 	} else {
-		go h.Handle(reply)
+// 		ch := make(chan error)
+// 		go h.Handle(reply, ch)
+// 		return <-ch
+		h.Handle(reply)
+		//go h.Handle(reply)
+		return nil
 	}
-	return nil
 }
 
-func (sv *ClientReqService) Register(op int, h ClientReqHandler) {
-	sv.handler_map[op] = h
+func (d *ClientReqDispatcher) Register(op int, h ClientReqHandler) {
+	d.handlermap[op] = h
 }
-

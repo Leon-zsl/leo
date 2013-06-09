@@ -9,8 +9,8 @@ type RecordWrapper interface {
 }
 
 type Record struct {
-	names []string
-	values []interface{}
+	Names []string
+	Values []interface{}
 }
 
 func NewRecord() (*Record, error) {
@@ -20,35 +20,27 @@ func NewRecord() (*Record, error) {
 }
 
 func (rcd *Record) init() error {
-	rcd.names = make([]string, 0)
-	rcd.values = make([]interface{}, 0)
+	rcd.Names = make([]string, 0)
+	rcd.Values = make([]interface{}, 0)
 	return nil
 }
 
 func (rcd *Record) Value(name string) interface{} {
-	for i, v := range(rcd.names) {
+	for i, v := range(rcd.Names) {
 		if v == name {
-			return rcd.values[i]
+			return rcd.Values[i]
 		}
 	}
 	return nil
 }
 
 func (rcd *Record) SetValue(name string, value interface{}) {
-	for i, v := range(rcd.names) {
+	for i, v := range(rcd.Names) {
 		if v == name {
-			rcd.values[i] = value
+			rcd.Values[i] = value
 			return
 		}
 	}
-	rcd.names = append(rcd.names, name)
-	rcd.values = append(rcd.values, value)
-}
-
-func (rcd *Record) Names() []string {
-	return rcd.names
-}
-
-func (rcd *Record) Values() []interface{} {
-	return rcd.values
+	rcd.Names = append(rcd.Names, name)
+	rcd.Values = append(rcd.Values, value)
 }

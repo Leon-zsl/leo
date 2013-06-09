@@ -80,7 +80,7 @@ func (client *RpcClient) rpc_call(method string, args interface{}, reply interfa
 	rspcall := <-call.Done
 	if cb != nil {
 		cb.HandlerReplay(rspcall.Reply, rspcall.Error)
-	} else {
+	} else if rspcall.Error != nil {
 		LoggerIns.Error("rpc async error", rspcall.Error)
 	}
 }

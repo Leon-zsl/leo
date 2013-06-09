@@ -3,8 +3,8 @@
 package gate
 
 import (
+	//"fmt"
 	"sync"
-
 	"leo/base"
 )
 
@@ -36,6 +36,7 @@ func (mgr *RouterMgr) Close() error {
 
 func (mgr *RouterMgr) HandleAcceptedSession(ssn *base.Session) {
 	rt, err := NewRouter(mgr, ssn)
+	ssn.RegisterHandler(rt)
 	if err != nil {
 		base.LoggerIns.Error("create router failed:", err)
 		return

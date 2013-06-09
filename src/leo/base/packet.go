@@ -10,12 +10,12 @@ import (
 
 //safe for goroutine
 type Packet struct {
-	op int32
-	args []byte
+	Op int32
+	Args []byte
 }
 
 func NewPacket(opcode int, argements []byte) *Packet {
-	return &Packet{op:int32(opcode), args:argements}
+	return &Packet{Op:int32(opcode), Args:argements}
 }
 
 func NewPacketFromBytes(b []byte) (pkt *Packet, err error) {
@@ -32,28 +32,28 @@ func NewPacketFromBytes(b []byte) (pkt *Packet, err error) {
 	}
 	
 	pkt = new(Packet)
-	pkt.op = op
-	pkt.args = b[4:]
+	pkt.Op = op
+	pkt.Args = b[4:]
 
 	return
 }
 
-func (pkt *Packet) Op() int32 {
-	return pkt.op
-}
+// func (pkt *Packet) Op() int32 {
+// 	return pkt.op
+// }
 
-func (pkt *Packet) Args() []byte {
-	return pkt.args
-}
+// func (pkt *Packet) Args() []byte {
+// 	return pkt.args
+// }
 
 func (pkt *Packet) Bytes() (b []byte, err error) {
 	buf := new(bytes.Buffer)
-	err = binary.Write(buf, binary.BigEndian, pkt.op)
+	err = binary.Write(buf, binary.BigEndian, pkt.Op)
 	if err != nil {
 		b = nil
 		return
 	}
 
-	b = append(buf.Bytes(), pkt.args...)
+	b = append(buf.Bytes(), pkt.Args...)
 	return
 }
