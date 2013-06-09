@@ -1,7 +1,7 @@
 /* this is the app
 */
 
-package client
+package robot
 
 import pblib "code.google.com/p/goprotobuf/proto"
 
@@ -35,9 +35,7 @@ func (app *App) init() error {
 	return nil
 }
 
-func (app *App) sendpkt(pkt *base.Packet) {
-	fmt.Println("send pkt...")
-
+func (app *App) Sendpkt(pkt *base.Packet) {
 	buffer, _ := pkt.Bytes()
 	l := int32(len(buffer))
 	buf := new(bytes.Buffer)
@@ -48,12 +46,9 @@ func (app *App) sendpkt(pkt *base.Packet) {
 	if err != nil {
 		fmt.Println("write err:", err.Error())
 	}	
-
-	fmt.Println("send pkt end...")
 }
 
-func (app *App) recvpkt() *base.Packet {
-	fmt.Println("recv pkt...")
+func (app *App) Recvpkt() *base.Packet {
 	tmp := make([]byte, 512)
 	_, err := app.Conn.Read(tmp)
 	if err != nil {
@@ -65,10 +60,7 @@ func (app *App) recvpkt() *base.Packet {
 	buf := bytes.NewBuffer(tmp[:4])
 	binary.Read(buf, binary.BigEndian, &l)
 
-	fmt.Println("recv len ", l)
 	pkt, _ := base.NewPacketFromBytes(tmp[4:l+4])
-
-	fmt.Println("recv pkt end...")
 	return pkt
 }
 
@@ -82,25 +74,28 @@ func (app *App) Startup() {
 	defer con.Close()
 	app.Conn = con.(*net.TCPConn)
 
-	for {
-		pb := &proto.Login{ Name : pblib.String("test"), Pwd : pblib.String("test")}
-		val, _ := pblib.Marshal(pb)
-		pkt := base.NewPacket(proto.LOGIN, val)
-		app.sendpkt(pkt)
-		
-		pkt = app.recvpkt()
-		pbr := &proto.LoginResp{}
+	test_all()
+}
+
+func test_all() {
+	test_login()
+	time.Sleep(1e9)
+}
+
+func test_login() {
+	fmt.Println("login...")
+	pb := &proto.Login{ Name : pblib.String("test"), Pwd : pblib.String("test")}
+	val, _ := pblib.Marshal(pb)
+	pkt := base.NewPacket(proto.LOGIN, val)
+	Root.Sendpkt(pkt)
 	
-		fmt.Println("recv: ", pkt.Op)
-		err := pblib.Unmarshal(pkt.Args, pbr)
-		if err != nil {
-			fmt.Println("parse proto failed:", err)
-			break
-		}
-		fmt.Println("login resp:", pbr.GetErrorCode(), pbr.GetErrorMsg())
-
-		time.Sleep(1e9)
-		break
+	pkt = Root.Recvpkt()
+	pbr := &proto.LoginResp{}
+	
+	err := pblib.Unmarshal(pkt.Args, pbr)
+	if err != nil {
+		fmt.Println("parse proto failed:", err)
+		return
 	}
-
+	fmt.Println("login resp:", pbr.GetErrorCode(), pbr.GetErrorMsg())
 }

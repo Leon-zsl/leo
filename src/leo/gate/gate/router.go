@@ -45,7 +45,7 @@ func (router *Router) Session() *base.Session {
 }
 
 func (router *Router) HandleSessionStart(ssn *base.Session) {
-	base.LoggerIns.Info("session start:", ssn.SID(), ssn.Addr())
+	//base.LoggerIns.Info("session start:", ssn.SID(), ssn.Addr())
 }
 
 func (router *Router) HandleSessionMsg(ssn *base.Session, pkt *base.Packet) {
@@ -85,7 +85,7 @@ func (router *Router) HandleSessionError(ssn *base.Session, err error) {
 }
 
 func (router *Router) HandleSessionClose(ssn *base.Session) {
-	base.LoggerIns.Info("session close:", ssn.SID(), ssn.Addr())
+	//base.LoggerIns.Info("session close:", ssn.SID(), ssn.Addr())
 	router.mgr.DelRouter(ssn.SID())
 }
 

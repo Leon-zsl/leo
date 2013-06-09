@@ -5,11 +5,11 @@ package main
 
 import (
 	"fmt"
-	"leo/client/client"
+	"leo/robot/robot"
 )
 
 func main () {
-	app, err := client.NewApp()
+	app, err := robot.NewApp()
 	if err != nil {
 		fmt.Println("new app err: ", err.Error())
 		return
