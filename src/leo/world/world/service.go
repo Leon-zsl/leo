@@ -1,20 +1,22 @@
 /* this is world service
-*/
+ */
 
 package world
 
 import (
 	"fmt"
 	"path"
-	"ini"
+	//	"ini"
 	"strconv"
 
 	"leo/base"
 )
 
+import ini "github.com/vaughan0/go-ini"
+
 type WorldService struct {
 	master_port_id int
-	Clock *base.Clock
+	Clock          *base.Clock
 
 	RoomMgr *RoomMgr
 }

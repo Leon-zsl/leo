@@ -1,5 +1,5 @@
 /* this is common
-*/
+ */
 
 package common
 
@@ -15,13 +15,13 @@ const (
 	LeoErrRpcIllegalResp
 )
 
-var ErrMap = map[int] string {
-LeoErrNo : "no error",
-LeoErrSys : "sys error",
-LeoErrStartFailed : "start failed",
-LeoErrRuntimeExcept : "runtime exception",
+var ErrMap = map[int]string{
+	LeoErrNo:            "no error",
+	LeoErrSys:           "sys error",
+	LeoErrStartFailed:   "start failed",
+	LeoErrRuntimeExcept: "runtime exception",
 
-LeoErrRpcNoArg : "rpc invoker no arg",
-LeoErrRpcIllegalArg : "rpc invoker illeagal arg",
-LeoErrRpcIllegalResp : "rpc invoker illeagal arg",
+	LeoErrRpcNoArg:       "rpc invoker no arg",
+	LeoErrRpcIllegalArg:  "rpc invoker illeagal arg",
+	LeoErrRpcIllegalResp: "rpc invoker illeagal arg",
 }

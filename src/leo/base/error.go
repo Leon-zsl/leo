@@ -1,5 +1,5 @@
 /* this is the error code
-*/
+ */
 package base
 
 import (
@@ -8,11 +8,11 @@ import (
 
 type LeoError struct {
 	code int
-	msg string
+	msg  string
 }
 
 func NewLeoError(errcode int, errmsg string) LeoError {
-	return LeoError{code:errcode, msg:errmsg}
+	return LeoError{code: errcode, msg: errmsg}
 }
 
 func (err LeoError) Error() string {
@@ -26,4 +26,3 @@ func (err LeoError) Code() int {
 func (err LeoError) Msg() string {
 	return err.msg
 }
-

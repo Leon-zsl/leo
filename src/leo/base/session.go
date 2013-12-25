@@ -1,23 +1,25 @@
 /* this is the session
-*/
+ */
 
 package base
 
 import (
-	"fmt"
 	"bytes"
 	"encoding/binary"
-	"time"
-	"strings"
-	"strconv"
+	"fmt"
 	"net"
-	"uuid"
+	"strconv"
+	"strings"
+	"time"
+	//	"uuid"
 	"runtime/debug"
 )
 
+import uuid "code.google.com/p/go-uuid/uuid"
+
 type SessionHandler interface {
 	HandleSessionStart(ssn *Session)
-	HandleSessionMsg(ssn *Session, pkt* Packet)
+	HandleSessionMsg(ssn *Session, pkt *Packet)
 	HandleSessionClose(ssn *Session)
 	HandleSessionError(ssn *Session, err error)
 }
@@ -27,11 +29,11 @@ type Session struct {
 	closed bool
 
 	addr string
-	sid string
+	sid  string
 
 	conn *net.TCPConn
 
-//	recvq *Queue
+	//	recvq *Queue
 	sendq *Queue
 
 	handlers []SessionHandler
@@ -50,7 +52,7 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 	ssn.handlers = make([]SessionHandler, 0)
 
 	ssn.sendq = NewQueue()
-//	ssn.recvq = NewQueue()
+	//	ssn.recvq = NewQueue()
 
 	conn.SetReadBuffer(2048)
 	//	conn.SetNoDelay(true)
@@ -58,7 +60,7 @@ func (ssn *Session) init(conn *net.TCPConn) error {
 	//	conn.SetLinger(0)
 
 	ssn.conn = conn
-	
+
 	return nil
 }
 
@@ -71,7 +73,7 @@ func (ssn *Session) Start() error {
 		return nil
 	}
 
-	for _, l := range(ssn.handlers) {
+	for _, l := range ssn.handlers {
 		l.HandleSessionStart(ssn)
 	}
 
@@ -87,7 +89,7 @@ func (ssn *Session) Closed() bool {
 }
 
 func (ssn *Session) Close() error {
-	for _, v := range(ssn.handlers) {
+	for _, v := range ssn.handlers {
 		v.HandleSessionClose(ssn)
 	}
 
@@ -105,7 +107,7 @@ func (ssn *Session) Conn() *net.TCPConn {
 }
 
 func (ssn *Session) RegisterHandler(h SessionHandler) {
-	for _, v := range(ssn.handlers) {
+	for _, v := range ssn.handlers {
 		if v == h {
 			LoggerIns.Warn("duplicate session handler")
 			return
@@ -115,7 +117,7 @@ func (ssn *Session) RegisterHandler(h SessionHandler) {
 }
 
 func (ssn *Session) UnRegisterHandler(h SessionHandler) {
-	for i, v := range(ssn.handlers) {
+	for i, v := range ssn.handlers {
 		if v == h {
 			ssn.handlers = append(ssn.handlers[:i],
 				ssn.handlers[i+1:]...)
@@ -150,7 +152,7 @@ func (ssn *Session) SID() string {
 
 func (ssn *Session) handle_send_err(err error) {
 	if len(ssn.handlers) > 0 {
-		for _, v := range(ssn.handlers) {
+		for _, v := range ssn.handlers {
 			v.HandleSessionError(ssn, err)
 		}
 	} else {
@@ -161,7 +163,7 @@ func (ssn *Session) handle_send_err(err error) {
 
 func (ssn *Session) handle_recv_err(err error) {
 	if len(ssn.handlers) > 0 {
-		for _, v := range(ssn.handlers) {
+		for _, v := range ssn.handlers {
 			v.HandleSessionError(ssn, err)
 		}
 	} else {
@@ -213,7 +215,7 @@ func (ssn *Session) onrecv() {
 		if l == 0 {
 			continue
 		}
-		
+
 		recvbuf = append(recvbuf, tmpbuf[:l]...)
 		for {
 			if len(recvbuf) == 0 {
@@ -227,25 +229,25 @@ func (ssn *Session) onrecv() {
 				ssn.handle_recv_err(err)
 				break
 			}
-			
-			if len(recvbuf) < int(ln + 4) {
+
+			if len(recvbuf) < int(ln+4) {
 				break
 			}
 
-			pk, err := NewPacketFromBytes(recvbuf[4:ln+4])
+			pk, err := NewPacketFromBytes(recvbuf[4 : ln+4])
 			if err != nil {
 				ssn.handle_recv_err(err)
 				break
 			}
 
-			for _, h := range(ssn.handlers) {
+			for _, h := range ssn.handlers {
 				h.HandleSessionMsg(ssn, pk)
 			}
 
- 			recvbuf = recvbuf[ln+4:]
+			recvbuf = recvbuf[ln+4:]
 
-// 			ssn.recvq.Push(pk)
-// 			recvbuf = recvbuf[ln+4:]
+			// 			ssn.recvq.Push(pk)
+			// 			recvbuf = recvbuf[ln+4:]
 		}
 	}
 }
@@ -320,4 +322,3 @@ func (ssn *Session) onsend() {
 		}
 	}
 }
-

@@ -1,5 +1,5 @@
 /* this is component base
-*/
+ */
 
 package comp
 

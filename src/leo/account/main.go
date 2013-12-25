@@ -1,12 +1,12 @@
 /* this is the master server
-*/
+ */
 
 package main
 
 import (
 	"fmt"
 	"leo/account/account"
-	)
+)
 
 func startup() {
 	a, err := account.NewAccount()

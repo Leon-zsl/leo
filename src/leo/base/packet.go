@@ -1,5 +1,5 @@
 /* this is packet
-*/
+ */
 
 package base
 
@@ -10,12 +10,12 @@ import (
 
 //safe for goroutine
 type Packet struct {
-	Op int32
+	Op   int32
 	Args []byte
 }
 
 func NewPacket(opcode int, argements []byte) *Packet {
-	return &Packet{Op:int32(opcode), Args:argements}
+	return &Packet{Op: int32(opcode), Args: argements}
 }
 
 func NewPacketFromBytes(b []byte) (pkt *Packet, err error) {
@@ -30,7 +30,7 @@ func NewPacketFromBytes(b []byte) (pkt *Packet, err error) {
 		pkt = nil
 		return
 	}
-	
+
 	pkt = new(Packet)
 	pkt.Op = op
 	pkt.Args = b[4:]

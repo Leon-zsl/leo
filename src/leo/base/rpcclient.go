@@ -1,12 +1,12 @@
 /* this is rpc client
-*/
+ */
 
 package base
 
 import (
-	"strings"
-	"strconv"
 	"net/rpc"
+	"strconv"
+	"strings"
 )
 
 //safe for goroutine
@@ -16,9 +16,9 @@ type RpcCallback interface {
 
 type RpcClient struct {
 	running bool
-	ip string
-	port int
-	cl *rpc.Client
+	ip      string
+	port    int
+	cl      *rpc.Client
 }
 
 func NewRpcClient(ip string, port int) (client *RpcClient, err error) {

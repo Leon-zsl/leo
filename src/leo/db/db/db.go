@@ -1,26 +1,28 @@
 /* this is db module
-*/
+ */
 
 package db
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"path"
-	"ini"
-	"time"
+	//	"ini"
 	"runtime"
 	"runtime/debug"
 	"strconv"
+	"time"
 
 	"leo/base"
 )
 
+import ini "github.com/vaughan0/go-ini"
+
 type DB struct {
 	running bool
 
-	Driver *base.Driver
-	Port *base.Port
+	Driver  *base.Driver
+	Port    *base.Port
 	Service base.Service
 }
 
@@ -32,7 +34,7 @@ func NewDB() (db *DB, err error) {
 	cpu := runtime.NumCPU()
 	runtime.GOMAXPROCS(cpu)
 	fmt.Println("number if cpu: ", cpu)
-	
+
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("create db failed!", r, string(debug.Stack()))

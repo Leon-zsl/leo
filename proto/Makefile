@@ -11,4 +11,4 @@ all: build
 build: $(GOFILES)
 
 %.pb.go: %.proto
-	../tool/protoc --go_out=$(TARG) $<
+	protoc --go_out=$(TARG) $<

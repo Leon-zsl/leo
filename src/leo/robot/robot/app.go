@@ -1,23 +1,23 @@
 /* this is the app
-*/
+ */
 
 package robot
 
 import pblib "code.google.com/p/goprotobuf/proto"
 
 import (
-	"fmt"
-	"net"
 	"bytes"
 	"encoding/binary"
-	"time"
+	"fmt"
 	"leo/base"
-//	"leo/common"
+	"net"
+	"time"
+	//	"leo/common"
 	"leo/proto"
 )
 
 type App struct {
-	Conn *net.TCPConn;
+	Conn *net.TCPConn
 }
 
 var (
@@ -41,11 +41,11 @@ func (app *App) Sendpkt(pkt *base.Packet) {
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.BigEndian, l)
 	buffer = append(buf.Bytes(), buffer...)
-	
+
 	_, err := app.Conn.Write(buffer)
 	if err != nil {
 		fmt.Println("write err:", err.Error())
-	}	
+	}
 }
 
 func (app *App) Recvpkt() *base.Packet {
@@ -60,7 +60,7 @@ func (app *App) Recvpkt() *base.Packet {
 	buf := bytes.NewBuffer(tmp[:4])
 	binary.Read(buf, binary.BigEndian, &l)
 
-	pkt, _ := base.NewPacketFromBytes(tmp[4:l+4])
+	pkt, _ := base.NewPacketFromBytes(tmp[4 : l+4])
 	return pkt
 }
 
@@ -84,14 +84,14 @@ func test_all() {
 
 func test_login() {
 	fmt.Println("login...")
-	pb := &proto.Login{ Name : pblib.String("test"), Pwd : pblib.String("test")}
+	pb := &proto.Login{Name: pblib.String("test"), Pwd: pblib.String("test")}
 	val, _ := pblib.Marshal(pb)
 	pkt := base.NewPacket(proto.LOGIN, val)
 	Root.Sendpkt(pkt)
-	
+
 	pkt = Root.Recvpkt()
 	pbr := &proto.LoginResp{}
-	
+
 	err := pblib.Unmarshal(pkt.Args, pbr)
 	if err != nil {
 		fmt.Println("parse proto failed:", err)

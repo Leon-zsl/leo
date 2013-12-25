@@ -1,16 +1,16 @@
 /* this is data cache
-*/
+ */
 
 package base
 
 import (
-	"sync"
 	"strconv"
+	"sync"
 )
 
 //goroutine safe
 type Cache struct {
-	data map[string] *Record
+	data map[string]*Record
 	lock sync.RWMutex
 }
 
@@ -21,7 +21,7 @@ func NewCache() (cache *Cache, err error) {
 }
 
 func (cache *Cache) init() error {
-	cache.data = make(map[string] *Record)
+	cache.data = make(map[string]*Record)
 	return nil
 }
 
@@ -33,7 +33,7 @@ func (cache *Cache) Close() error {
 	return nil
 }
 
-func (cache *Cache) Get(table string, key int) (*Record) {
+func (cache *Cache) Get(table string, key int) *Record {
 	k := cache.map_key(table, key)
 	if k == "" {
 		return nil

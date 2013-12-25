@@ -1,10 +1,10 @@
 /* this is the room manager
-*/
+ */
 
 package world
 
 type RoomMgr struct {
-	room_map map[string] *Room
+	room_map map[string]*Room
 }
 
 func NewRoomMgr() (mgr *RoomMgr, err error) {
@@ -14,7 +14,7 @@ func NewRoomMgr() (mgr *RoomMgr, err error) {
 }
 
 func (mgr *RoomMgr) init() error {
-	mgr.room_map = make(map[string] *Room)
+	mgr.room_map = make(map[string]*Room)
 	return nil
 }
 
@@ -24,7 +24,7 @@ func (mgr *RoomMgr) Start() error {
 }
 
 func (mgr *RoomMgr) Close() error {
-	for _, room := range(mgr.room_map) {
+	for _, room := range mgr.room_map {
 		room.Close()
 	}
 	mgr.room_map = make(map[string]*Room)
@@ -32,7 +32,7 @@ func (mgr *RoomMgr) Close() error {
 }
 
 func (mgr *RoomMgr) Tick() error {
-	//do nothing now. 
+	//do nothing now.
 	//one room one goroutine
 	return nil
 }

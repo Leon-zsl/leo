@@ -1,10 +1,10 @@
 /* this is server port
-*/
+ */
 
 package base
 
 import (
-//	"fmt"
+	//	"fmt"
 	"errors"
 	"strconv"
 	"sync"
@@ -14,16 +14,16 @@ import (
 type Port struct {
 	running bool
 
-	id int
+	id     int
 	server *RpcServer
 
-	lock sync.RWMutex
-	clients map[int] *RpcClient
+	lock    sync.RWMutex
+	clients map[int]*RpcClient
 }
 
 type PortData struct {
-	ID int
-	IP string
+	ID   int
+	IP   string
 	Port int
 }
 
@@ -52,7 +52,7 @@ func (service *HandShakeService) Open(cl *PortData, sv *PortData) error {
 	}
 	sv.ID = service.owner.ID()
 	sv.IP = service.owner.Server().IP()
-	sv.Port = service.owner.Server().Port()	
+	sv.Port = service.owner.Server().Port()
 	return nil
 }
 
@@ -77,7 +77,7 @@ func (service *HandShakeService) Close(cl *PortData, sv *PortData) error {
 	}
 	sv.ID = service.owner.ID()
 	sv.IP = service.owner.Server().IP()
-	sv.Port = service.owner.Server().Port()	
+	sv.Port = service.owner.Server().Port()
 	return nil
 }
 
@@ -95,9 +95,9 @@ func (port *Port) init(id int, ip string, pt int) error {
 	port.server = s
 	port.id = id
 
-	port.clients = make(map[int] *RpcClient)
+	port.clients = make(map[int]*RpcClient)
 
-	hs := &HandShakeService{owner:port}
+	hs := &HandShakeService{owner: port}
 	port.RegisterService(hs)
 	return nil
 }
@@ -107,10 +107,10 @@ func (port *Port) Start() error {
 }
 
 func (port *Port) Close() error {
-	for _, v := range(port.clients) {
+	for _, v := range port.clients {
 		v.Close()
 	}
-	port.clients = make(map[int] *RpcClient)
+	port.clients = make(map[int]*RpcClient)
 
 	if port.server != nil {
 		port.server.Close()
@@ -166,7 +166,7 @@ func (port *Port) CloseConnect(port_id int) error {
 		ps := new(PortData)
 		err := v.Call("HandShakeService.Close", pd, ps)
 		if err != nil {
-			LoggerIns.Error("close connect err:", err);
+			LoggerIns.Error("close connect err:", err)
 		}
 
 		v.Close()

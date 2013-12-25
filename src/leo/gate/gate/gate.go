@@ -3,24 +3,26 @@
 package gate
 
 import (
-	"fmt"
 	"errors"
-	"strconv"
+	"fmt"
 	"path"
-	"ini"
-	"time"
+	"strconv"
+	//	"ini"
 	"runtime"
 	"runtime/debug"
+	"time"
 
 	"leo/base"
 )
+
+import ini "github.com/vaughan0/go-ini"
 
 type Gate struct {
 	running bool
 
 	Acceptor *base.Acceptor
 	//Connector *base.Connector
-	Port *base.Port
+	Port    *base.Port
 	Service base.Service
 }
 
@@ -127,12 +129,12 @@ func (gate *Gate) init() error {
 	gate.Acceptor = ac
 
 	//init connector
-// 	co, err := base.NewConnector()
-// 	if err != nil {
-// 		gate.close()
-// 		return err
-// 	}
-// 	gate.Connector = co
+	// 	co, err := base.NewConnector()
+	// 	if err != nil {
+	// 		gate.close()
+	// 		return err
+	// 	}
+	// 	gate.Connector = co
 
 	//init port
 	cid, ok := conf.Get("port_server", "id")
@@ -222,7 +224,6 @@ func (gate *Gate) start() {
 	gate.Service.Start()
 }
 
-
 func (gate *Gate) close() {
 	gate.running = false
 
@@ -234,10 +235,10 @@ func (gate *Gate) close() {
 		gate.Acceptor.Close()
 		gate.Acceptor = nil
 	}
-// 	if gate.Connector != nil {
-// 		gate.Connector.Close()
-// 		gate.Connector = nil
-// 	}
+	// 	if gate.Connector != nil {
+	// 		gate.Connector.Close()
+	// 		gate.Connector = nil
+	// 	}
 	if gate.Port != nil {
 		gate.Port.Close()
 		gate.Port = nil

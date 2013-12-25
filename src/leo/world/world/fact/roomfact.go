@@ -1,5 +1,5 @@
 /* this is room fact
-*/
+ */
 
 package fact
 

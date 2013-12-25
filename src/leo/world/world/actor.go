@@ -1,5 +1,5 @@
 /* this is actor
-*/
+ */
 
 package world
 
@@ -8,7 +8,7 @@ import (
 )
 
 type Actor struct {
-	id string
+	id       string
 	comp_map map[string]comp.Component
 }
 
@@ -23,21 +23,21 @@ func (actor *Actor) init() error {
 }
 
 func (actor *Actor) Start() error {
-	for _, v := range(actor.comp_map) {
+	for _, v := range actor.comp_map {
 		v.Start()
 	}
 	return nil
 }
 
 func (actor *Actor) Close() error {
-	for _, v := range(actor.comp_map) {
+	for _, v := range actor.comp_map {
 		v.Close()
 	}
 	return nil
 }
 
 func (actor *Actor) Tick() error {
-	for _, v := range(actor.comp_map) {
+	for _, v := range actor.comp_map {
 		v.Tick()
 	}
 	return nil

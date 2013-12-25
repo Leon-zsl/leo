@@ -1,5 +1,5 @@
 /* this is clock service
-*/
+ */
 
 package base
 
@@ -11,8 +11,8 @@ import (
 type Clock struct {
 	running bool
 
-	pretime time.Time
-	curtime time.Time
+	pretime   time.Time
+	curtime   time.Time
 	deltatime time.Duration
 }
 

@@ -1,5 +1,5 @@
 /* this is the master config val
-*/
+ */
 
 package master
 

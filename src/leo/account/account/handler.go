@@ -5,10 +5,10 @@ package account
 import pblib "code.google.com/p/goprotobuf/proto"
 
 import (
-	"fmt"
+	//	"fmt"
 	"leo/base"
-	"leo/proto"
 	"leo/common"
+	"leo/proto"
 )
 
 type ClientReqHandler interface {
@@ -16,7 +16,7 @@ type ClientReqHandler interface {
 }
 
 func SendRegisterResponse(sid string, code int32, msg string) {
-	pb := &proto.RegisterResp{ ErrorCode : pblib.Int32(code), ErrorMsg : pblib.String(msg)}
+	pb := &proto.RegisterResp{ErrorCode: pblib.Int32(code), ErrorMsg: pblib.String(msg)}
 	val, _ := pblib.Marshal(pb)
 	pkt := base.NewPacket(proto.REGISTERRESP, val)
 	resp := &common.RpcSendTo{sid, pkt}
@@ -24,7 +24,7 @@ func SendRegisterResponse(sid string, code int32, msg string) {
 }
 
 func SendLoginResponse(sid string, code int32, msg string) {
-	pb := &proto.LoginResp{ ErrorCode : pblib.Int32(code), ErrorMsg : pblib.String(msg)}
+	pb := &proto.LoginResp{ErrorCode: pblib.Int32(code), ErrorMsg: pblib.String(msg)}
 	val, _ := pblib.Marshal(pb)
 	pkt := base.NewPacket(proto.LOGINRESP, val)
 	resp := &common.RpcSendTo{sid, pkt}
@@ -60,7 +60,7 @@ func (h *RegisterHandler) Handle(reply *common.RpcClientRequest) {
 		SendRegisterResponse(reply.Sid, proto.EC_SERV_ERR, "")
 		return
 	}
-	
+
 	if r.Ok && r.Values != nil && len(r.Values) > 0 {
 		SendRegisterResponse(reply.Sid, proto.EC_ACCOUNT_EXISTS, "")
 		return
@@ -75,7 +75,7 @@ func (h *RegisterHandler) Handle(reply *common.RpcClientRequest) {
 	}
 
 	rcd, _ := base.NewRecord()
-	rcd.SetValue("uid", count + 1)
+	rcd.SetValue("uid", count+1)
 	rcd.SetValue("account", dt.GetName())
 	rcd.SetValue("pwd", dt.GetPwd())
 	u := new(common.DBAdd)

@@ -1,26 +1,28 @@
 /* this is stage module
-*/
+ */
 
 package account
 
 import (
+	"errors"
 	"fmt"
 	"path"
-	"time"
-	"strconv"
-	"errors"
 	"runtime"
 	"runtime/debug"
+	"strconv"
+	"time"
 
-	"ini"
+	//	"ini"
 
 	"leo/base"
 )
 
+import ini "github.com/vaughan0/go-ini"
+
 type Account struct {
 	running bool
 
-	Port *base.Port
+	Port    *base.Port
 	Service base.Service
 }
 
@@ -153,7 +155,7 @@ func (account *Account) Run() {
 				fmt.Println("runtine exception:", r, string(debug.Stack()))
 			}
 		}
-		
+
 		account.close()
 	}()
 

@@ -1,12 +1,12 @@
 /* this is connect to master
-*/
+ */
 
 package base
 
 import (
 	"net"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 //goroutine safe
@@ -16,7 +16,7 @@ type Connector struct {
 
 //var ConnectorIns *Connector = nil
 
-func NewConnector () (conn *Connector, err error) {
+func NewConnector() (conn *Connector, err error) {
 	conn = new(Connector)
 	err = conn.init()
 	//ConnectorIns = conn

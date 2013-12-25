@@ -1,18 +1,21 @@
 /* this is logger
-*/
+ */
 
 package base
 
 import (
+	"log"
 	"os"
 	"runtime"
-	"log"
-	"log4go"
+
+//	"log4go"
 )
+
+import log4go "code.google.com/p/log4go"
 
 //safe for goroutine
 type Logger struct {
-	lgtype int
+	lgtype    int
 	logger4go log4go.Logger
 	loggersys *log.Logger
 }
@@ -23,7 +26,6 @@ const (
 	LOG_TYPE_SYS = iota
 	LOG_TYPE_LOG4GO
 )
-
 
 func NewLogger(ty int, confile string) (lg *Logger, err error) {
 	lg = new(Logger)
@@ -62,7 +64,7 @@ func (lg *Logger) Critical(v ...interface{}) {
 }
 
 func (lg *Logger) Error(v ...interface{}) {
-		_, f, l, _ := runtime.Caller(1)
+	_, f, l, _ := runtime.Caller(1)
 	if lg.lgtype == LOG_TYPE_LOG4GO {
 		lg.logger4go.Error("[", f, "]", "[", l, "]", v)
 	} else {

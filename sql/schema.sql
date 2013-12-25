@@ -1,9 +1,3 @@
--- mysql schema
-
--- Host: localhost Database: leo
-
---Table structure for table 'main_user'
-
 DROP TABLE IF EXISTS `main_user`;
 CREATE TABLE `main_user` (
     `uid` int(10) unsigned NOT NULL AUTO_INCREMENT,

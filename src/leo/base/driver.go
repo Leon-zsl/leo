@@ -1,28 +1,28 @@
 /* this is db driver
-*/
+ */
 
 package base
 
 import (
-	"strconv"
-	"errors"
 	"database/sql"
+	"errors"
 	_ "github.com/go-sql-driver/mysql"
+	"strconv"
 )
 
 //goroutine safe
 type Driver struct {
 	running bool
 
-	addr string
-	name string
+	addr    string
+	name    string
 	account string
-	pwd string
+	pwd     string
 
 	db *sql.DB
 
 	usecache bool
-	cache *Cache
+	cache    *Cache
 }
 
 func NewDriver(addr, name, account, pwd string, usecache bool) (driver *Driver, err error) {
@@ -43,10 +43,10 @@ func (driver *Driver) init(addr, name, account, pwd string, usecache bool) error
 }
 
 func (driver *Driver) Start() error {
-	db, err := sql.Open("mysql", driver.account + ":" + driver.pwd + 
-		"@tcp" + "(" + driver.addr + ")" + 
-		"/" + driver.name + 
-		"?" + "charset=" + "utf8")
+	db, err := sql.Open("mysql", driver.account+":"+driver.pwd+
+		"@tcp"+"("+driver.addr+")"+
+		"/"+driver.name+
+		"?"+"charset="+"utf8")
 
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func (driver *Driver) DB() *sql.DB {
 	return driver.db
 }
 
-func (driver *Driver) Get(table string, key int, keyname string) (*Record, error){
+func (driver *Driver) Get(table string, key int, keyname string) (*Record, error) {
 	if table == "" {
 		return nil, errors.New("table is invalid")
 	}
@@ -88,7 +88,7 @@ func (driver *Driver) Get(table string, key int, keyname string) (*Record, error
 			return val, nil
 		}
 	}
-	
+
 	sql := "SELECT * FROM " + table + " WHERE " + keyname + "=?"
 	rows, err := driver.db.Query(sql, key)
 	if err != nil {
@@ -100,7 +100,7 @@ func (driver *Driver) Get(table string, key int, keyname string) (*Record, error
 	if err != nil {
 		return nil, err
 	}
-	
+
 	for rows.Next() {
 		if rows.Err() != nil {
 			return nil, rows.Err()
@@ -111,7 +111,7 @@ func (driver *Driver) Get(table string, key int, keyname string) (*Record, error
 			return nil, err
 		}
 		val_addrs := make([]interface{}, len(names))
-		for i, _ := range(names) {
+		for i, _ := range names {
 			var v interface{} = nil
 			val_addrs[i] = &v
 		}
@@ -120,7 +120,7 @@ func (driver *Driver) Get(table string, key int, keyname string) (*Record, error
 			return nil, err
 		}
 
-		for i, v := range(val_addrs) {
+		for i, v := range val_addrs {
 			rcd.SetValue(names[i], *(v.(*interface{})))
 		}
 
@@ -138,16 +138,16 @@ func (driver *Driver) Get(table string, key int, keyname string) (*Record, error
 func (driver *Driver) Set(table string, key int, keyname string, record *Record) error {
 	sql := "UPDATE " + table + " SET "
 	idx := 0
-	for _, name := range(record.Names) {
+	for _, name := range record.Names {
 		comma := ","
-		if idx == len(record.Names) - 1 {
+		if idx == len(record.Names)-1 {
 			comma = ""
 		}
 
 		sql += name + "=?" + comma + " "
 		idx++
 	}
-	
+
 	sql += " WHERE " + keyname + "=" + strconv.Itoa(key)
 	_, err := driver.db.Exec(sql, record.Values...)
 	if err != nil {
@@ -164,9 +164,9 @@ func (driver *Driver) Set(table string, key int, keyname string, record *Record)
 func (driver *Driver) Add(table string, key int, keyname string, record *Record) error {
 	sql := "INSERT INTO " + table + " VALUES " + "("
 	idx := 0
-	for _, _ = range(record.Names) {
+	for _, _ = range record.Names {
 		comma := ","
-		if idx == len(record.Names) - 1 {
+		if idx == len(record.Names)-1 {
 			comma = ""
 		}
 
@@ -220,7 +220,7 @@ func (driver *Driver) Query(sql string, args []interface{}) ([]*Record, error) {
 
 		rcd, _ := NewRecord()
 		val_addrs := make([]interface{}, len(names))
-		for i, _ := range(names) {
+		for i, _ := range names {
 			var v interface{} = nil
 			val_addrs[i] = &v
 		}
@@ -229,7 +229,7 @@ func (driver *Driver) Query(sql string, args []interface{}) ([]*Record, error) {
 			return nil, err
 		}
 
-		for i, v := range(val_addrs) {
+		for i, v := range val_addrs {
 			rcd.SetValue(names[i], *(v.(*interface{})))
 		}
 

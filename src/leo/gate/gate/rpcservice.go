@@ -1,10 +1,10 @@
 /* this is rpc handlers
-*/
+ */
 
 package gate
 
 import (
-//	"fmt"
+	//	"fmt"
 	"leo/common"
 )
 
@@ -29,7 +29,7 @@ func (rs *RpcService) SendTo(reply *common.RpcSendTo, v *int) error {
 
 //it will hurt the response speed seriously
 func (rs *RpcService) SendToAll(reply *common.RpcSendToAll, v *int) error {
-	for _, v := range(ServiceIns.RouterMgr.Routers()) {
+	for _, v := range ServiceIns.RouterMgr.Routers() {
 		v.Session().Send(reply.Pkt)
 	}
 	*v = 0
@@ -37,7 +37,7 @@ func (rs *RpcService) SendToAll(reply *common.RpcSendToAll, v *int) error {
 }
 
 func (rs *RpcService) Broadcast(reply *common.RpcBroadcast, v *int) error {
-	for _, v := range(reply.Sids) {
+	for _, v := range reply.Sids {
 		rt, ok := ServiceIns.RouterMgr.Router(v)
 		if ok {
 			rt.Session().Send(reply.Pkt)

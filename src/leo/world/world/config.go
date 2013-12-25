@@ -1,5 +1,5 @@
 /* this is the world config val
-*/
+ */
 
 package world
 

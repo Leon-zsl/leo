@@ -15,8 +15,8 @@ type ClientReqService struct {
 }
 
 type ClientReqDispatcher struct {
-	handlermap map[int] ClientReqHandler
-	service *ClientReqService
+	handlermap map[int]ClientReqHandler
+	service    *ClientReqService
 }
 
 func NewClientReqDispatcher(port *base.Port) (sv *ClientReqDispatcher, err error) {
@@ -26,7 +26,7 @@ func NewClientReqDispatcher(port *base.Port) (sv *ClientReqDispatcher, err error
 }
 
 func (d *ClientReqDispatcher) init(port *base.Port) error {
-	d.handlermap = make(map[int] ClientReqHandler)
+	d.handlermap = make(map[int]ClientReqHandler)
 	d.Register(proto.REGISTER, new(RegisterHandler))
 	d.Register(proto.LOGIN, new(LoginHandler))
 
@@ -41,8 +41,8 @@ func (sv *ClientReqService) Request(reply *common.RpcClientRequest, v *int) erro
 	op := int(reply.Pkt.Op)
 	h, ok := sv.owner.handlermap[op]
 	if !ok {
-		pb := &proto.Error{ ErrorCode : pblib.Int32(proto.EC_UNKNOWN_OP), 
-			ErrorMsg : pblib.String("")}
+		pb := &proto.Error{ErrorCode: pblib.Int32(proto.EC_UNKNOWN_OP),
+			ErrorMsg: pblib.String("")}
 		val, err := pblib.Marshal(pb)
 		if err != nil {
 			base.LoggerIns.Error("pb marshal err:", err)
@@ -53,9 +53,9 @@ func (sv *ClientReqService) Request(reply *common.RpcClientRequest, v *int) erro
 		Root.Port.SendAsync(AccountServiceIns.GateServer(), "RpcService.SendTo", resp)
 		return nil
 	} else {
-// 		ch := make(chan error)
-// 		go h.Handle(reply, ch)
-// 		return <-ch
+		// 		ch := make(chan error)
+		// 		go h.Handle(reply, ch)
+		// 		return <-ch
 		h.Handle(reply)
 		//go h.Handle(reply)
 		return nil

@@ -1,5 +1,5 @@
 /* this is test client
-*/
+ */
 
 package main
 
@@ -8,7 +8,7 @@ import (
 	"leo/robot/robot"
 )
 
-func main () {
+func main() {
 	app, err := robot.NewApp()
 	if err != nil {
 		fmt.Println("new app err: ", err.Error())

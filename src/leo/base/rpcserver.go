@@ -1,21 +1,21 @@
 /* this is rpc server
-*/
+ */
 
 package base
 
 import (
 	"fmt"
-	"strings"
-	"strconv"
 	"net"
 	"net/rpc"
 	"runtime/debug"
+	"strconv"
+	"strings"
 )
 
 //safe for goroutine
 type RpcServer struct {
-	running bool
-	addr string
+	running  bool
+	addr     string
 	listener *net.TCPListener
 
 	conns []*net.TCPConn
@@ -79,7 +79,7 @@ func (server *RpcServer) IP() string {
 
 func (server *RpcServer) Port() int {
 	arr := strings.Split(server.addr, ":")
-	if len(arr) >1 {
+	if len(arr) > 1 {
 		v, err := strconv.Atoi(arr[1])
 		if err != nil {
 			return 0

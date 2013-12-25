@@ -1,5 +1,5 @@
 /* this is actor fact
-*/
+ */
 
 package fact
 

@@ -3,20 +3,20 @@
 package base
 
 import (
-	"fmt"
 	"database/sql"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type DBPool struct {
 	running bool
 
-	addr string
-	name string
+	addr    string
+	name    string
 	account string
-	pwd string
+	pwd     string
 
-	size int
+	size  int
 	conns chan *sql.DB
 }
 
@@ -69,10 +69,10 @@ func (pool *DBPool) product() {
 	}()
 
 	for pool.running {
-		conn, err := sql.Open("mysql", pool.account + ":" + pool.pwd + 
-			"@tcp" + "(" + pool.addr + ")" + 
-			"/" + pool.name + 
-			"?" + "charset=" + "utf8")
+		conn, err := sql.Open("mysql", pool.account+":"+pool.pwd+
+			"@tcp"+"("+pool.addr+")"+
+			"/"+pool.name+
+			"?"+"charset="+"utf8")
 		if err != nil {
 			LoggerIns.Error("create db conn failed", err)
 			break

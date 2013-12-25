@@ -4,19 +4,19 @@ package gate
 
 import pblib "code.google.com/p/goprotobuf/proto"
 import (
+	"errors"
 	"fmt"
 	"io"
-	"errors"
 	"runtime/debug"
 
 	"leo/base"
-	"leo/proto"
 	"leo/common"
+	"leo/proto"
 )
 
 type Router struct {
-	mgr *RouterMgr
-	ssn *base.Session
+	mgr           *RouterMgr
+	ssn           *base.Session
 	world_port_id int
 }
 
@@ -59,15 +59,15 @@ func (router *Router) HandleSessionMsg(ssn *base.Session, pkt *base.Packet) {
 	var err error = nil
 	switch target {
 	case "master":
-		err = Root.Port.SendAsync(ServiceIns.MasterServer(),"ClientReqService.Request", req)
+		err = Root.Port.SendAsync(ServiceIns.MasterServer(), "ClientReqService.Request", req)
 	case "account":
-		err = Root.Port.SendAsync(ServiceIns.AccountServer(),"ClientReqService.Request", req)
+		err = Root.Port.SendAsync(ServiceIns.AccountServer(), "ClientReqService.Request", req)
 	case "world":
 		err = Root.Port.SendAsync(router.world_port_id, "ClientReqService.Request", req)
 	default:
 		err = errors.New("unknown target service")
 	}
-	
+
 	if err != nil {
 		base.LoggerIns.Error("router err", pkt.Op, err.Error())
 		router.send_err_resp(ssn, pkt.Op, proto.EC_UNKNOWN_OP, err.Error())
@@ -90,7 +90,7 @@ func (router *Router) HandleSessionClose(ssn *base.Session) {
 }
 
 func (router *Router) send_err_resp(ssn *base.Session, op int32, code int32, msg string) {
-	pb := &proto.Error{ Op : pblib.Int32(op), ErrorCode : pblib.Int32(code), ErrorMsg : pblib.String(msg)}
+	pb := &proto.Error{Op: pblib.Int32(op), ErrorCode: pblib.Int32(code), ErrorMsg: pblib.String(msg)}
 	val, _ := pblib.Marshal(pb)
 	pkt := base.NewPacket(proto.ERROR, val)
 	ssn.Send(pkt)

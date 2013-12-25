@@ -1,5 +1,5 @@
 /* this is a simple queue
-*/
+ */
 
 package base
 
@@ -10,7 +10,7 @@ import (
 //safe for goroutine
 type Queue struct {
 	lock sync.Mutex
-	rb *RingBuffer
+	rb   *RingBuffer
 }
 
 func NewQueue() (q *Queue) {
@@ -27,14 +27,10 @@ func (q *Queue) Push(v interface{}) {
 
 func (q *Queue) Pop() interface{} {
 	q.lock.Lock()
-	q.lock.Unlock()
-	v := q.rb.Pop()
+	defer q.lock.Unlock()
 
-	if v != nil {
-		return v
-	} else {
-		return nil
-	}
+	v := q.rb.Pop()
+	return v
 }
 
 func (q *Queue) Count() int {
@@ -51,12 +47,7 @@ func (q *Queue) Empty() bool {
 
 func (q *Queue) Peek() interface{} {
 	q.lock.Lock()
-	q.lock.Unlock()
+	defer q.lock.Unlock()
 	v := q.rb.Peek()
-
-	if v != nil {
-		return v
-	} else {
-		return nil
-	}
+	return v
 }

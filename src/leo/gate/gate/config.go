@@ -1,5 +1,5 @@
 /* this is the gate config val
-*/
+ */
 
 package gate
 

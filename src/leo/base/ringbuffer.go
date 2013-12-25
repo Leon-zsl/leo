@@ -1,12 +1,12 @@
 /* this is ring buffer data structure
-*/
+ */
 
 package base
 
 type RingBuffer struct {
 	nodes []interface{}
-	head int
-	tail int
+	head  int
+	tail  int
 	count int
 }
 
@@ -25,9 +25,9 @@ func NewRingBuffer(size int) *RingBuffer {
 
 func (rb *RingBuffer) Push(v interface{}) {
 	if rb.count > 0 && rb.head == rb.tail {
-		ns := make([]interface{}, len(rb.nodes) * 2)
+		ns := make([]interface{}, len(rb.nodes)*2)
 		copy(ns, rb.nodes[rb.head:])
-		copy(ns[len(rb.nodes) - rb.head:], rb.nodes[:rb.head])
+		copy(ns[len(rb.nodes)-rb.head:], rb.nodes[:rb.head])
 		rb.head = 0
 		rb.tail = rb.count
 		rb.nodes = ns
@@ -52,7 +52,7 @@ func (rb *RingBuffer) Pop() interface{} {
 func (rb *RingBuffer) Peek() interface{} {
 	if rb.count == 0 {
 		return nil
-	}	
+	}
 	return rb.nodes[rb.head]
 }
 
@@ -63,4 +63,3 @@ func (rb *RingBuffer) Count() int {
 func (rb *RingBuffer) Empty() bool {
 	return rb.count == 0
 }
-

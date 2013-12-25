@@ -1,12 +1,12 @@
 /* this is the master server
-*/
+ */
 
 package main
 
 import (
 	"fmt"
 	"leo/master/master"
-	)
+)
 
 func startup() {
 	m, err := master.NewMaster()

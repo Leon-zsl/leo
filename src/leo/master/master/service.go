@@ -1,5 +1,5 @@
 /* this is master service
-*/
+ */
 
 package master
 
@@ -7,14 +7,16 @@ import (
 	"fmt"
 	"path"
 	"strconv"
-	"ini"
+	//	"ini"
 	"leo/base"
 )
 
+import ini "github.com/vaughan0/go-ini"
+
 type MasterService struct {
-	db_port_id int
+	db_port_id   int
 	gate_port_id int
-	Clock *base.Clock
+	Clock        *base.Clock
 }
 
 func NewMasterService() (service *MasterService, err error) {

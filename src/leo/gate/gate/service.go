@@ -1,22 +1,24 @@
 /* this is the main logic
-*/
+ */
 
 package gate
 
 import (
 	"fmt"
-	"strconv"
 	"path"
-	"ini"
+	"strconv"
+	//	"ini"
 
 	"leo/base"
 )
 
+import ini "github.com/vaughan0/go-ini"
+
 type GateService struct {
-	master_port_id int
+	master_port_id  int
 	account_port_id int
 
-	Clock *base.Clock
+	Clock     *base.Clock
 	RouterMgr *RouterMgr
 }
 

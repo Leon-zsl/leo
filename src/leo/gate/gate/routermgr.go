@@ -4,13 +4,13 @@ package gate
 
 import (
 	//"fmt"
-	"sync"
 	"leo/base"
+	"sync"
 )
 
 type RouterMgr struct {
-	lock sync.RWMutex
-	rt_map map[string] *Router
+	lock   sync.RWMutex
+	rt_map map[string]*Router
 }
 
 func NewRouterMgr() (mgr *RouterMgr, err error) {
@@ -27,7 +27,7 @@ func (mgr *RouterMgr) init() error {
 func (mgr *RouterMgr) Close() error {
 	mgr.lock.Lock()
 	defer mgr.lock.Unlock()
-	for _, v := range(mgr.rt_map) {
+	for _, v := range mgr.rt_map {
 		v.Session().Close()
 	}
 	mgr.rt_map = make(map[string]*Router)
@@ -76,7 +76,7 @@ func (mgr *RouterMgr) DelRouter(sid string) {
 func (mgr *RouterMgr) Routers() []*Router {
 	rts := make([]*Router, 0)
 	mgr.lock.RLock()
-	for _, v := range(mgr.rt_map) {
+	for _, v := range mgr.rt_map {
 		rts = append(rts, v)
 	}
 	mgr.lock.RUnlock()

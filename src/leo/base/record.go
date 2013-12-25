@@ -1,5 +1,5 @@
 /* this is db record
-*/
+ */
 
 package base
 
@@ -9,7 +9,7 @@ type RecordWrapper interface {
 }
 
 type Record struct {
-	Names []string
+	Names  []string
 	Values []interface{}
 }
 
@@ -26,7 +26,7 @@ func (rcd *Record) init() error {
 }
 
 func (rcd *Record) Value(name string) interface{} {
-	for i, v := range(rcd.Names) {
+	for i, v := range rcd.Names {
 		if v == name {
 			return rcd.Values[i]
 		}
@@ -35,7 +35,7 @@ func (rcd *Record) Value(name string) interface{} {
 }
 
 func (rcd *Record) SetValue(name string, value interface{}) {
-	for i, v := range(rcd.Names) {
+	for i, v := range rcd.Names {
 		if v == name {
 			rcd.Values[i] = value
 			return

@@ -8,23 +8,23 @@ import (
 
 //db service args
 type DBQuery struct {
-	Sql string
+	Sql  string
 	Args []interface{}
 }
 
 type DBQueryResp struct {
-	Ok bool
+	Ok     bool
 	Values []*base.Record
 }
 
 type DBGet struct {
-	Table string
-	Key int
+	Table   string
+	Key     int
 	Keyname string
 }
 
 type DBGetResp struct {
-	Ok bool
+	Ok    bool
 	Value *base.Record
 }
 
@@ -58,11 +58,11 @@ type RpcSendToAll struct {
 
 type RpcBroadcast struct {
 	Sids []string
-	Pkt *base.Packet
+	Pkt  *base.Packet
 }
 
 //gate service args
 type RpcMoveWorld struct {
-	Sid string
+	Sid    string
 	PortID int
 }

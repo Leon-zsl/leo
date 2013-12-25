@@ -1,14 +1,14 @@
 /* this is connect manager
-*/
+ */
 
 package base
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 	"net"
 	"runtime/debug"
+	"strconv"
+	"strings"
 )
 
 type AcceptedSessionListener interface {
@@ -17,10 +17,10 @@ type AcceptedSessionListener interface {
 
 //goroutine safe if register before start
 type Acceptor struct {
-	running bool
-	addr string
+	running      bool
+	addr         string
 	listen_count int
-	listener *net.TCPListener
+	listener     *net.TCPListener
 
 	ssnListeners []AcceptedSessionListener
 }
@@ -59,29 +59,29 @@ func (mgr *Acceptor) Start() error {
 		return err
 	}
 
-// 	file, err := listener.File()
-// 	if err != nil {
-// 		LoggerIns.Critical("get tcp listener file failed", err)
-// 		return
-// 	}
-// 	err = syscall.SetsockoptInt(int(file.Fd()),
-// 		syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
-// 	if err != nil {
-// 		LoggerIns.Critical("set tcp listener reuseaddr failed", err)
-// 		return
-// 	}
-// 	s, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
-// 	if err != nil {
-// 		LoggerIns.Critical("get tcp listener file failed", err)
-// 		return
-// 	}
-// 	err = syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
-// 	if err != nil {
-// 		LoggerIns.Critical("set tcp listener reuseaddr failed", err)
-// 		return
-// 	}
+	// 	file, err := listener.File()
+	// 	if err != nil {
+	// 		LoggerIns.Critical("get tcp listener file failed", err)
+	// 		return
+	// 	}
+	// 	err = syscall.SetsockoptInt(int(file.Fd()),
+	// 		syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+	// 	if err != nil {
+	// 		LoggerIns.Critical("set tcp listener reuseaddr failed", err)
+	// 		return
+	// 	}
+	// 	s, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, syscall.IPPROTO_TCP)
+	// 	if err != nil {
+	// 		LoggerIns.Critical("get tcp listener file failed", err)
+	// 		return
+	// 	}
+	// 	err = syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+	// 	if err != nil {
+	// 		LoggerIns.Critical("set tcp listener reuseaddr failed", err)
+	// 		return
+	// 	}
 	mgr.listener = listener
-	
+
 	for i := 0; i < mgr.listen_count; i++ {
 		go mgr.handle_accept()
 	}
@@ -107,7 +107,7 @@ func (mgr *Acceptor) IP() string {
 
 func (mgr *Acceptor) Port() int {
 	arr := strings.Split(mgr.addr, ":")
-	if len(arr) >1 {
+	if len(arr) > 1 {
 		v, err := strconv.Atoi(arr[1])
 		if err != nil {
 			return 0
@@ -120,10 +120,10 @@ func (mgr *Acceptor) Port() int {
 }
 
 func (mgr *Acceptor) RegisterAcceptedSessionListener(l AcceptedSessionListener) {
-// 	mgr.connlock.Lock()
-// 	defer mgr.connlock.Unlock()
+	// 	mgr.connlock.Lock()
+	// 	defer mgr.connlock.Unlock()
 
-	for _, v := range(mgr.ssnListeners) {
+	for _, v := range mgr.ssnListeners {
 		if v == l {
 			return
 		}
@@ -132,10 +132,10 @@ func (mgr *Acceptor) RegisterAcceptedSessionListener(l AcceptedSessionListener) 
 }
 
 func (mgr *Acceptor) UnRegisterAcceptedSessionListener(l AcceptedSessionListener) {
-// 	mgr.connlock.Lock()
-// 	defer mgr.connlock.Unlock()
+	// 	mgr.connlock.Lock()
+	// 	defer mgr.connlock.Unlock()
 
-	for i, v := range(mgr.ssnListeners) {
+	for i, v := range mgr.ssnListeners {
 		if v == l {
 			mgr.ssnListeners = append(mgr.ssnListeners[:i],
 				mgr.ssnListeners[i+1:]...)

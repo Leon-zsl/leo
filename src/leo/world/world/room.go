@@ -1,28 +1,30 @@
 /* this is the gameplay room
-*/
+ */
 
 package world
 
 import (
 	"fmt"
-	"time"
 	"sync"
-	"uuid"
-	"runtime/debug"
+	"time"
+	//	"uuid"
 	"leo/base"
 	"leo/world/world/module"
+	"runtime/debug"
 )
+
+import uuid "code.google.com/p/go-uuid/uuid"
 
 //one room one goroutine
 type Room struct {
 	running bool
-	id string
+	id      string
 
 	lock_actor sync.Mutex
-	actor_map map[string] *Actor
+	actor_map  map[string]*Actor
 
 	lock_mod sync.Mutex
-	mod_map map[string] module.Module
+	mod_map  map[string]module.Module
 
 	dispatcher *base.Dispatcher
 }
@@ -36,8 +38,8 @@ func NewRoom() (room *Room, err error) {
 func (room *Room) init() error {
 	room.running = false
 	room.id = uuid.New()
-	room.actor_map = make(map[string] *Actor)
-	room.mod_map = make(map[string] module.Module)
+	room.actor_map = make(map[string]*Actor)
+	room.mod_map = make(map[string]module.Module)
 	room.dispatcher, _ = base.NewDispatcher()
 	return nil
 }
@@ -134,21 +136,21 @@ func (room *Room) run() {
 				base.LoggerIns.Critical(r, string(debug.Stack()))
 			} else {
 				fmt.Println("runtine exception:", r, string(debug.Stack()))
-			}			
+			}
 		}
 		room.doclose()
 	}()
 
 	c := time.Tick(60 * time.Millisecond)
-	for _ = range(c) {
+	for _ = range c {
 		room.lock_mod.Lock()
-		for _, m := range(room.mod_map) {
+		for _, m := range room.mod_map {
 			m.Tick()
 		}
 		room.lock_mod.Unlock()
 
 		room.lock_actor.Lock()
-		for _, a := range(room.actor_map) {
+		for _, a := range room.actor_map {
 			a.Tick()
 		}
 		room.lock_actor.Unlock()
@@ -164,13 +166,13 @@ func (room *Room) run() {
 func (room *Room) doclose() {
 	room.running = false
 	room.lock_mod.Lock()
-	for _, m := range(room.mod_map) {
+	for _, m := range room.mod_map {
 		m.Close()
 	}
 	room.lock_mod.Unlock()
 
 	room.lock_actor.Lock()
-	for _, a := range(room.actor_map) {
+	for _, a := range room.actor_map {
 		a.Close()
 	}
 	room.lock_actor.Unlock()
